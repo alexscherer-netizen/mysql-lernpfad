@@ -244,6 +244,7 @@ table.grid td.num{text-align:right}
   padding:4px 9px;color:var(--muted);cursor:pointer;background:var(--ink-2)
 }
 .schemachip:hover{color:var(--amber);border-color:var(--amber)}
+.schemachip.on{background:var(--amber);color:#10221c;border-color:var(--amber);font-weight:600}
 .result{border:1px solid var(--line);border-radius:12px;background:var(--ink-2);overflow:hidden}
 .result .rhead{padding:9px 14px;border-bottom:1px solid var(--line-soft);font-family:var(--mono);font-size:11.5px;color:var(--muted)}
 .result .rbody{padding:0;max-height:440px;overflow:auto}
@@ -2009,10 +2010,10 @@ FIGS.nf = `<svg viewBox="0 0 720 320" role="img" aria-label="Weg von der unnorma
 <text class="f-bad" x="24" y="66">Mehrfachwert in einer Zelle · Abteilungsname und Leiter in jeder Zeile wiederholt</text>
 <path class="f-arrow" d="M120 82 V104"/><text class="f-k" x="132" y="98">1NF — atomare Werte</text>
 <rect class="f-box" x="10" y="108" width="700" height="46" rx="7"/>
-<text class="f-m" x="24" y="128">je Gerät eine eigene Zeile — keine Listen mehr in einer Zelle</text>
-<text class="f-bad" x="24" y="146">abt_leiter hängt weiterhin von abteilung ab, nicht von mit_nr</text>
-<path class="f-arrow" d="M120 156 V178"/><text class="f-k" x="132" y="172">2NF — volle Abhängigkeit vom ganzen Schlüssel</text>
-<path class="f-arrow" d="M120 182 V204"/><text class="f-k" x="132" y="198">3NF — keine transitiven Abhängigkeiten</text>
+<text class="f-m" x="24" y="128">je Gerät eine eigene Zeile — Schlüssel jetzt (mit_nr, geraet)</text>
+<text class="f-bad" x="24" y="146">name und abteilung hängen nur von mit_nr ab — partielle Abhängigkeit</text>
+<path class="f-arrow" d="M120 156 V178"/><text class="f-k" x="132" y="172">2NF — Nichtprimärattribute hängen vom ganzen Schlüssel ab</text>
+<path class="f-arrow" d="M120 182 V204"/><text class="f-k" x="132" y="198">3NF — keine transitiven Abhängigkeiten (abteilung → abt_leiter)</text>
 <g>
 <rect class="f-box2" x="10" y="210" width="215" height="94" rx="8"/>
 <rect class="f-head" x="10" y="210" width="215" height="24" rx="8"/><text class="f-th" x="24" y="227">abteilung</text>
@@ -2130,8 +2131,9 @@ body:[
  {table:{head:["Engine","Eigenschaften"], rows:[
   ["InnoDB","Transaktionen (ACID), Fremdschlüssel, Row-Level-Locking, Crash-Recovery. Der Standard für alles Produktive."],
   ["MyISAM","Kein Transaktionsschutz, nur Table-Locking, keine Fremdschlüssel. Historisch, heute nicht mehr empfohlen."],
-  ["MEMORY","Hält Daten im RAM, verliert sie beim Neustart. In MySQL 9.x aus dem Server entfernt."],
-  ["CSV / ARCHIVE","Spezialfälle für Im- und Export bzw. komprimierte Archive."]
+  ["MEMORY","Hält Daten im RAM, verliert sie beim Neustart. Weiterhin verfügbar, aber nur für kurzlebige Hilfstabellen gedacht."],
+  ["CSV / ARCHIVE","Spezialfälle für Im- und Export bzw. komprimierte Archive."],
+  ["FEDERATED","Greift auf Tabellen eines entfernten Servers zu. Muss beim Start eigens mit <code>--federated</code> aktiviert werden."]
  ]}},
  {sql:"SHOW TABLES;", label:"Welche Tabellen gibt es in dieser Übungsdatenbank?", run:true},
  {sql:"DESCRIBE mitarbeiter;", label:"Struktur einer Tabelle anzeigen", run:true},
@@ -2183,7 +2185,7 @@ body:[
  {table:{head:["Typ","Eigenschaft","Einsatz"], rows:[
   ["CHAR(n)","feste Länge, wird mit Leerzeichen aufgefüllt","Länderkürzel, Hashwerte fester Länge"],
   ["VARCHAR(n)","variable Länge plus 1–2 Byte Längenangabe","Namen, Titel, E-Mail-Adressen"],
-  ["TEXT","bis 65 535 Byte, außerhalb der Zeile gespeichert","Beschreibungen, Kommentare, Artikeltexte"],
+  ["TEXT","bis 65 535 Byte; lange Werte legt InnoDB außerhalb der Zeile ab","Beschreibungen, Kommentare, Artikeltexte"],
   ["ENUM('a','b')","genau ein Wert aus einer festen Liste","kleine, sehr stabile Wertelisten"],
   ["JSON","validiertes JSON-Dokument mit eigenen Funktionen","halbstrukturierte Zusatzdaten, Konfigurationen"]
  ]}},
@@ -2215,13 +2217,8 @@ id:"ddl", num:"03", title:"DDL — Tabellen, Schlüssel und Constraints",
 kicker:"Kapitel 03 · Struktur definieren",
 lead:"Die Data Definition Language beschreibt den Bauplan. Gute Constraints machen falsche Daten technisch unmöglich — das ist billiger als jede Prüfung im Anwendungscode.",
 body:[
- {h3:"Die vier SQL-Sprachfamilien"},
- {table:{head:["Familie","Anweisungen","Zweck"], rows:[
-  ["DDL","CREATE, ALTER, DROP, TRUNCATE","Struktur definieren"],
-  ["DML","INSERT, UPDATE, DELETE","Daten verändern"],
-  ["DQL","SELECT","Daten abfragen"],
-  ["DCL / TCL","GRANT, REVOKE / COMMIT, ROLLBACK","Rechte und Transaktionen"]
- ]}},
+ {h3:"Einordnung"},
+ {p:"Alles in diesem Kapitel gehört zur <strong>DDL</strong>, der Data Definition Language: Sie beschreibt, welche Objekte es gibt — Datenbanken, Tabellen, Sichten, Indizes. Die vollständige Übersicht über alle fünf Sprachfamilien steht im vorigen Kapitel."},
  {box:{kind:"exam", title:"Prüfungswissen", html:"<p>DDL-Anweisungen lösen in MySQL ein <strong>implizites COMMIT</strong> aus: Eine laufende Transaktion wird dadurch abgeschlossen und lässt sich nicht mehr zurückrollen. Ein <code>ALTER TABLE</code> mitten in einer Transaktion ist deshalb keine gute Idee.</p>"}},
  {h3:"Tabelle anlegen"},
  {sql:"CREATE TABLE abteilung (\n  id       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,\n  name     VARCHAR(40)   NOT NULL UNIQUE,\n  standort VARCHAR(30)   NOT NULL DEFAULT 'Berlin',\n  budget   DECIMAL(10,2) NOT NULL CHECK (budget >= 0)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;", label:"Tabelle mit allen wichtigen Constraints", run:false},
@@ -2287,7 +2284,7 @@ body:[
  {sql:"DELETE FROM abteilung WHERE id IN (7, 8, 9);\nSELECT COUNT(*) AS abteilungen FROM abteilung;", label:"Aufräumen", run:true},
  {p:"<code>DELETE</code> arbeitet zeilenweise, protokolliert jede Zeile im Binärlog und lässt sich innerhalb einer Transaktion zurückrollen. <code>TRUNCATE TABLE</code> verwirft dagegen den gesamten Tabelleninhalt in einem Schritt, ist dadurch erheblich schneller, setzt den AUTO_INCREMENT-Zähler zurück und kennt kein Rollback."},
  {box:{kind:"tip", title:"Sicherheitsnetz im Alltag", html:"<ol><li>Immer zuerst als <code>SELECT</code> mit identischer WHERE-Klausel ausführen.</li><li>Bei kritischen Änderungen <code>START TRANSACTION</code> davorsetzen und erst nach der Prüfung <code>COMMIT</code>.</li><li>Vor Massenänderungen ein <code>mysqldump</code> der betroffenen Tabelle ziehen.</li></ol>"}},
- {sql:"START TRANSACTION;\nUPDATE mitarbeiter SET gehalt = gehalt * 1.5 WHERE id = 11;\n-- Kontrolle, dann Entscheidung:\nROLLBACK;", label:"Transaktion als Rückfahrkarte (Konzept, siehe Kapitel 13)", run:false},
+ {sql:"START TRANSACTION;\nUPDATE mitarbeiter SET gehalt = gehalt * 1.5 WHERE id = 11;\n-- Kontrolle, dann Entscheidung:\nROLLBACK;", label:"Transaktion als Rückfahrkarte (Konzept, siehe Kapitel „Transaktionen, ACID und Sperren“)", run:false},
  {p:"Beim Löschen mit Fremdschlüsselbeziehungen entscheidet die Referenzaktion über den Ausgang: Mit <code>RESTRICT</code> scheitert die Anweisung mit <em>Cannot delete or update a parent row</em>, mit <code>CASCADE</code> verschwinden auch alle Kindsätze — bei tief verschachtelten Beziehungen oft mehr, als beabsichtigt war."}
 ],
 tasks:[
@@ -2347,6 +2344,118 @@ tasks:[
 ]
 }
 ];
+/* Kapitel 03 wird direkt hinter "Datentypen" eingehängt */
+CHAPTERS.splice(2, 0,
+{
+id:"sqlfamilien", num:"03", title:"SQL im Überblick — die fünf Sprachfamilien",
+kicker:"Kapitel 03 · Die Sprache",
+lead:"SQL ist nicht eine Sprache, sondern fünf Teilsprachen unter einem Dach. Wer weiß, wozu eine Anweisung gehört, weiß auch, ob sie zurückrollbar ist, welche Rechte sie braucht und wo sie in der Prüfung einsortiert wird.",
+body:[
+ {h3:"Standard und Dialekt"},
+ {p:"SQL ist in der Norm <strong>ISO/IEC 9075</strong> beschrieben. Jedes Datenbanksystem setzt davon einen Kern um und ergänzt eigene Erweiterungen — deshalb läuft eine Abfrage aus einem Oracle-Lehrbuch nicht zwangsläufig in MySQL. Der gemeinsame Kern ist groß genug, dass sich Kenntnisse übertragen lassen; die Abweichungen betreffen vor allem Begrenzung, Bezeichner und Funktionsnamen."},
+ {p:"Traditionell wird SQL in Teilsprachen gegliedert. Die Namen sind keine Norm, sondern Lehrbuchkonvention — in Prüfungen werden sie aber genau so abgefragt:"},
+ {table:{head:["Familie","Steht für","Anweisungen","Zurückrollbar?"], rows:[
+  ["<strong>DDL</strong>","Data Definition Language","CREATE, ALTER, DROP, TRUNCATE, RENAME","nein — implizites COMMIT"],
+  ["<strong>DML</strong>","Data Manipulation Language","INSERT, UPDATE, DELETE, REPLACE, LOAD DATA","ja (InnoDB)"],
+  ["<strong>DQL</strong>","Data Query Language","SELECT, TABLE, VALUES","verändert nichts"],
+  ["<strong>DCL</strong>","Data Control Language","GRANT, REVOKE","nein — implizites COMMIT"],
+  ["<strong>TCL</strong>","Transaction Control Language","START TRANSACTION, COMMIT, ROLLBACK, SAVEPOINT","steuert das Zurückrollen selbst"]
+ ]}},
+ {box:{kind:"exam", title:"Zwei Sichtweisen auf DQL", html:"<p>Manche Quellen führen nur vier Familien und rechnen <code>SELECT</code> zur DML, weil die Norm es unter <em>data manipulation</em> einordnet. Andere trennen DQL ab, weil SELECT als einzige Anweisung nichts verändert. Beides ist vertretbar — in einer Prüfungsantwort lohnt der Halbsatz „SELECT wird je nach Quelle als eigene Familie DQL oder als Teil der DML geführt“.</p>"}},
+ {h3:"DDL — Struktur definieren"},
+ {p:"DDL beschreibt, <em>was es gibt</em>: Datenbanken, Tabellen, Sichten, Indizes, Programme, Benutzer. Fast jedes Datenbankobjekt folgt demselben Dreiklang aus <code>CREATE</code>, <code>ALTER</code> und <code>DROP</code>."},
+ {table:{head:["Objekt","Anlegen","Ändern","Entfernen"], rows:[
+  ["Datenbank","CREATE DATABASE","ALTER DATABASE","DROP DATABASE"],
+  ["Tabelle","CREATE TABLE","ALTER TABLE","DROP TABLE / TRUNCATE TABLE"],
+  ["Sicht","CREATE VIEW","ALTER VIEW / CREATE OR REPLACE VIEW","DROP VIEW"],
+  ["Index","CREATE INDEX / ALTER TABLE … ADD INDEX","—","DROP INDEX"],
+  ["Prozedur / Funktion","CREATE PROCEDURE / FUNCTION","ALTER PROCEDURE (nur Merkmale)","DROP PROCEDURE / FUNCTION"],
+  ["Trigger","CREATE TRIGGER","— (löschen und neu anlegen)","DROP TRIGGER"],
+  ["Event","CREATE EVENT","ALTER EVENT","DROP EVENT"],
+  ["Benutzer / Rolle","CREATE USER / CREATE ROLE","ALTER USER","DROP USER / DROP ROLE"]
+ ]}},
+ {box:{kind:"warn", title:"Warum DDL kein Rollback kennt", html:"<p>Jede DDL-Anweisung schließt eine offene Transaktion automatisch ab (<em>implicit commit</em>). Dasselbe gilt für DCL-Anweisungen wie <code>GRANT</code> sowie für <code>LOCK TABLES</code>, <code>SET autocommit = 1</code> und <code>START TRANSACTION</code> selbst. Seit MySQL 8.0 sind DDL-Anweisungen immerhin <strong>atomar</strong>: Sie gelangen entweder vollständig ins Data Dictionary oder gar nicht — ein halb angelegter Index nach einem Serverabsturz ist damit Geschichte.</p>"}},
+ {h3:"DML — Daten verändern"},
+ {table:{head:["Anweisung","Wirkung"], rows:[
+  ["INSERT","fügt Zeilen ein; als INSERT … SELECT auch aus einer Abfrage"],
+  ["UPDATE","ändert vorhandene Zeilen"],
+  ["DELETE","löscht Zeilen, zeilenweise und rollback-fähig"],
+  ["REPLACE","MySQL-Erweiterung: löscht die Konfliktzeile und fügt neu ein"],
+  ["LOAD DATA","liest eine Datei ein — der schnellste Massenimport"],
+  ["MERGE","<em>nicht in MySQL.</em> Der Standard-Upsert wird durch INSERT … ON DUPLICATE KEY UPDATE ersetzt"]
+ ]}},
+ {h3:"DQL — Daten abfragen"},
+ {p:"Neben <code>SELECT</code> gibt es seit MySQL 8.0.19 zwei kompakte Geschwister: <code>TABLE t</code> entspricht <code>SELECT * FROM t</code>, und <code>VALUES ROW(…), ROW(…)</code> erzeugt eine Ergebnismenge aus festen Werten ohne Tabelle. Beide dürfen überall dort stehen, wo ein SELECT erlaubt ist."},
+ {sql:"-- Diese beiden Anweisungen sind gleichwertig\nSELECT * FROM abteilung;\n\n-- TABLE abteilung;   (ab MySQL 8.0.19, in dieser Übungskonsole nicht verfügbar)", label:"SELECT und seine Kurzform", run:true},
+ {table:{head:["Mengenoperator","Bedeutung","Verfügbar"], rows:[
+  ["UNION [ALL]","Vereinigung, ohne ALL werden Duplikate entfernt","seit jeher"],
+  ["INTERSECT [ALL]","Schnittmenge: nur Zeilen, die in beiden Ergebnissen stehen","ab MySQL 8.0.31"],
+  ["EXCEPT [ALL]","Differenz: Zeilen des ersten Ergebnisses, die im zweiten fehlen","ab MySQL 8.0.31"],
+  ["MINUS","Oracle-Schreibweise für EXCEPT","in MySQL nicht vorhanden"]
+ ]}},
+ {sql:"-- Mengenoperationen ab MySQL 8.0.31\nSELECT nachname FROM mitarbeiter WHERE abteilung_id = 1\nINTERSECT\nSELECT nachname FROM mitarbeiter WHERE gehalt > 4000;\n\nSELECT nachname FROM mitarbeiter\nEXCEPT\nSELECT nachname FROM mitarbeiter WHERE abteilung_id IS NOT NULL;", label:"INTERSECT und EXCEPT (auf echtem Server ab 8.0.31)", run:false},
+ {box:{kind:"tip", title:"Ersatz in älteren Versionen", html:"<p><code>INTERSECT</code> lässt sich durch einen <code>INNER JOIN</code> oder <code>WHERE … IN (SELECT …)</code> nachbilden, <code>EXCEPT</code> durch das Anti-Join-Muster <code>LEFT JOIN … WHERE b.id IS NULL</code> oder <code>NOT EXISTS</code>. Genau diese Umschreibungen sind auch die übliche Prüfungsaufgabe.</p>"}},
+ {h3:"DCL — Rechte steuern"},
+ {table:{head:["Anweisung","Wirkung"], rows:[
+  ["GRANT","vergibt Rechte an Konten oder Rollen"],
+  ["REVOKE","entzieht Rechte"],
+  ["CREATE USER / DROP USER","legt Konten an oder entfernt sie (formal DDL, inhaltlich Rechteverwaltung)"],
+  ["CREATE ROLE / SET DEFAULT ROLE","bündelt Rechte und aktiviert sie für ein Konto"],
+  ["SET PASSWORD / ALTER USER","ändert Passwörter und Kontoeigenschaften"],
+  ["FLUSH PRIVILEGES","lädt die Rechtetabellen neu — nur nötig nach direkter Änderung an mysql.user"]
+ ]}},
+ {h3:"TCL — Transaktionen steuern"},
+ {sql:"START TRANSACTION;      -- oder BEGIN\n  UPDATE konto SET saldo = saldo - 100 WHERE id = 1;\n  SAVEPOINT nach_abbuchung;\n  UPDATE konto SET saldo = saldo + 100 WHERE id = 2;\nROLLBACK TO nach_abbuchung;   -- nimmt nur den zweiten Schritt zurück\nCOMMIT;                        -- bestätigt den Rest", label:"Die vollständige TCL-Werkzeugkiste", run:false},
+ {table:{head:["Anweisung","Wirkung"], rows:[
+  ["START TRANSACTION / BEGIN","beginnt eine Transaktion und setzt autocommit aus"],
+  ["COMMIT","bestätigt dauerhaft"],
+  ["ROLLBACK","verwirft alle Änderungen der Transaktion"],
+  ["SAVEPOINT / ROLLBACK TO / RELEASE SAVEPOINT","Zwischenmarken innerhalb einer Transaktion"],
+  ["SET TRANSACTION ISOLATION LEVEL","legt die Isolationsstufe fest"],
+  ["LOCK TABLES / UNLOCK TABLES","explizite Tabellensperren — bei InnoDB selten nötig"]
+ ]}},
+ {h3:"Und der Rest: Verwaltungsanweisungen"},
+ {p:"Ein gutes Drittel des Alltags fällt in keine der fünf Familien. Diese Anweisungen fragen den Server nach sich selbst oder steuern seinen Betrieb:"},
+ {table:{head:["Anweisung","Zweck"], rows:[
+  ["SHOW …","Metadaten: DATABASES, TABLES, COLUMNS, INDEX, CREATE TABLE, PROCESSLIST, VARIABLES, STATUS, GRANTS, ENGINES"],
+  ["DESCRIBE / EXPLAIN","Tabellenaufbau bzw. Ausführungsplan einer Abfrage"],
+  ["USE db","aktuelle Datenbank wählen"],
+  ["SET / SET GLOBAL","Sitzungs- und Servervariablen setzen"],
+  ["ANALYZE / OPTIMIZE / CHECK / REPAIR TABLE","Statistiken erneuern, Tabellen aufräumen oder prüfen"],
+  ["FLUSH / KILL","Puffer leeren, Logs rotieren, hängende Verbindungen beenden"]
+ ]}},
+ {sql:"SHOW TABLES;\nDESCRIBE ticket;", label:"Zwei Verwaltungsanweisungen, hier ausführbar", run:true},
+ {h3:"Anatomie einer Anweisung"},
+ {p:"Jede SQL-Anweisung besteht aus <strong>Klauseln</strong> (<code>SELECT …</code>, <code>FROM …</code>, <code>WHERE …</code>), die wiederum <strong>Ausdrücke</strong> und <strong>Prädikate</strong> enthalten. Ein Prädikat ist eine Bedingung, die wahr, falsch oder unbekannt ergibt — die dritte Möglichkeit gibt es nur wegen NULL."},
+ {table:{head:["Schreibweise","Regel in MySQL"], rows:[
+  ["Semikolon","trennt Anweisungen; im Client Pflicht, in vielen Konnektoren optional"],
+  ["Kommentare","<code>-- Text</code> (mit Leerzeichen danach!), <code>#&nbsp;Text</code> und <code>/* … */</code>"],
+  ["Schlüsselwörter","Groß-/Kleinschreibung egal; Konvention: Schlüsselwörter groß, Bezeichner klein"],
+  ["Bezeichner","in Backticks einfassen, wenn sie ein reserviertes Wort sind: <code>`order`</code>"],
+  ["Zeichenketten","einfache Anführungszeichen. Doppelte funktionieren, bedeuten im SQL-Modus ANSI_QUOTES aber Bezeichner"],
+  ["Tabellennamen","unter Linux standardmäßig <em>case-sensitive</em>, unter Windows und macOS nicht — gesteuert über <code>lower_case_table_names</code>"]
+ ]}},
+ {box:{kind:"warn", title:"Zwei Klassiker aus der Fehlersuche", html:"<p>Ein Kommentar mit <code>--</code> braucht in MySQL zwingend ein Leerzeichen oder Zeilenende danach; <code>--5</code> ist keine Kommentarzeile, sondern ein doppeltes Minus. Und ein Projekt, das unter Windows entwickelt und unter Linux betrieben wird, stolpert früher oder später über die Groß-/Kleinschreibung von Tabellennamen — deshalb von Anfang an durchgängig kleinschreiben.</p>"}},
+ {h3:"MySQL gegen den Standard"},
+ {table:{head:["Aufgabe","MySQL","Anderswo"], rows:[
+  ["Ergebnis begrenzen","LIMIT 10 OFFSET 20","TOP 10 (SQL Server), FETCH FIRST 10 ROWS ONLY (Standard, Oracle, DB2)"],
+  ["Bezeichner schützen","`backticks`","\"doppelte Anführungszeichen\" (Standard), [eckige Klammern] (SQL Server)"],
+  ["NULL ersetzen","IFNULL(a, b)","COALESCE(a, b) (Standard), NVL (Oracle), ISNULL (SQL Server)"],
+  ["Zeichenketten verbinden","CONCAT(a, b)","a || b (Standard, Oracle, PostgreSQL)"],
+  ["Fortlaufende IDs","AUTO_INCREMENT","IDENTITY, SEQUENCE, SERIAL"],
+  ["Upsert","INSERT … ON DUPLICATE KEY UPDATE","MERGE INTO (Standard)"],
+  ["Differenzmenge","EXCEPT (ab 8.0.31)","MINUS (Oracle)"]
+ ]}},
+ {box:{kind:"exam", title:"In einem Satz", html:"<p><strong>DDL</strong> baut die Struktur, <strong>DML</strong> pflegt die Daten, <strong>DQL</strong> liest sie, <strong>DCL</strong> regelt den Zugriff, <strong>TCL</strong> klammert alles zu Arbeitsschritten zusammen. Alles Übrige — SHOW, EXPLAIN, SET — dient der Verwaltung und gehört zu keiner der fünf Familien.</p>"}}
+],
+tasks:[
+ {q:"Welche Familie gehört zu <code>SELECT</code>? Führe die passende DQL-Anweisung aus, die alle Spalten der Tabelle <code>abteilung</code> liefert.", solution:"SELECT * FROM abteilung;"},
+ {q:"Bilde <code>INTERSECT</code> ohne den Operator nach: Gib die Nachnamen aller Mitarbeiter aus, die zur Abteilung 2 gehören <em>und</em> mehr als 4000 verdienen.", solution:"SELECT nachname FROM mitarbeiter WHERE abteilung_id = 2 AND gehalt > 4000;", hint:"Bei einer einzigen Tabelle genügt AND — bei zwei Abfragen wäre es ein INNER JOIN oder IN (SELECT …)."},
+ {q:"Bilde <code>EXCEPT</code> nach: Welche Abteilungen haben keine Mitarbeiter? Gib die Spalte <code>name</code> aus.", solution:"SELECT a.name FROM abteilung a LEFT JOIN mitarbeiter m ON m.abteilung_id = a.id WHERE m.id IS NULL;", hint:"Anti-Join-Muster oder NOT EXISTS."},
+ {q:"Führe eine Verwaltungsanweisung aus, die den Aufbau der Tabelle <code>geraet</code> zeigt.", solution:"DESCRIBE geraet;", free:true}
+]
+}
+);
 CHAPTERS.push(
 {
 id:"funktionen", num:"06", title:"Funktionen für Text, Zahlen und Datum",
@@ -2525,7 +2634,7 @@ body:[
  ]}},
  {h3:"Stored Procedures"},
  {sql:"DELIMITER //\nCREATE PROCEDURE gehalt_erhoehen(\n  IN  p_abteilung INT,\n  IN  p_prozent   DECIMAL(5,2),\n  OUT p_anzahl    INT\n)\nBEGIN\n  UPDATE mitarbeiter\n     SET gehalt = gehalt * (1 + p_prozent/100)\n   WHERE abteilung_id = p_abteilung;\n\n  SET p_anzahl = ROW_COUNT();\nEND //\nDELIMITER ;\n\nCALL gehalt_erhoehen(2, 3.5, @betroffen);\nSELECT @betroffen;", label:"Prozedur mit IN- und OUT-Parameter", run:false},
- {p:"<code>DELIMITER //</code> stellt das Anweisungstrennzeichen vorübergehend um, damit die Semikolons im Rumpf nicht als Ende der CREATE-Anweisung gelesen werden. Parameter gibt es als <code>IN</code> (Standard), <code>OUT</code> und <code>INOUT</code>. Prozeduren liefern Ergebnismengen, Funktionen dagegen genau einen Rückgabewert und dürfen in Ausdrücken stehen."},
+ {p:"<code>DELIMITER //</code> stellt das Anweisungstrennzeichen vorübergehend um, damit die Semikolons im Rumpf nicht als Ende der CREATE-Anweisung gelesen werden. Es ist ein Befehl des <em>Clients</em>, kein SQL — in einem Programm, das die Anweisung als Ganzes schickt, entfällt er. Parameter gibt es als <code>IN</code> (Standard), <code>OUT</code> und <code>INOUT</code>. Prozeduren liefern Ergebnismengen, Funktionen dagegen genau einen Rückgabewert und dürfen in Ausdrücken stehen."},
  {sql:"DELIMITER //\nCREATE FUNCTION betriebszugehoerigkeit(p_eintritt DATE)\nRETURNS INT\nDETERMINISTIC\nBEGIN\n  RETURN TIMESTAMPDIFF(YEAR, p_eintritt, CURDATE());\nEND //\nDELIMITER ;\n\nSELECT nachname, betriebszugehoerigkeit(eintritt) AS jahre FROM mitarbeiter;", label:"Gespeicherte Funktion", run:false},
  {h3:"Trigger"},
  {sql:"CREATE TABLE gehalt_log (\n  id        INT AUTO_INCREMENT PRIMARY KEY,\n  mitarbeiter_id INT NOT NULL,\n  alt       DECIMAL(8,2),\n  neu       DECIMAL(8,2),\n  geaendert TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n);\n\nDELIMITER //\nCREATE TRIGGER trg_gehalt_update\nAFTER UPDATE ON mitarbeiter\nFOR EACH ROW\nBEGIN\n  IF OLD.gehalt <> NEW.gehalt THEN\n    INSERT INTO gehalt_log (mitarbeiter_id, alt, neu)\n    VALUES (OLD.id, OLD.gehalt, NEW.gehalt);\n  END IF;\nEND //\nDELIMITER ;", label:"Änderungen automatisch protokollieren", run:false},
@@ -2557,7 +2666,7 @@ body:[
   ["1:n","Abteilung ↔ Mitarbeiter","Fremdschlüssel auf der n-Seite (in mitarbeiter)"],
   ["n:m","Projekt ↔ Mitarbeiter","eigene Zwischentabelle mit zwei Fremdschlüsseln"]
  ]}},
- {box:{kind:"exam", title:"Prüfungswissen", html:"<p>Die Kardinalität wird immer aus beiden Richtungen gelesen: <em>Eine Abteilung hat viele Mitarbeiter, ein Mitarbeiter gehört zu genau einer Abteilung.</em> Zusätzlich gibt die <strong>Modalität</strong> an, ob die Teilnahme optional (min 0) oder verpflichtend (min 1) ist — in der (min,max)-Notation etwa (0,n) und (1,1).</p>"}},
+ {box:{kind:"exam", title:"Prüfungswissen", html:"<p>Die Kardinalität wird immer aus beiden Richtungen gelesen: <em>Eine Abteilung hat viele Mitarbeiter, ein Mitarbeiter gehört zu höchstens einer Abteilung.</em> Zusätzlich gibt die <strong>Modalität</strong> an, ob die Teilnahme optional (min 0) oder verpflichtend (min 1) ist.</p><p>In der (min,max)-Notation steht die Angabe an der <em>eigenen</em> Seite: Abteilung (0,n), Mitarbeiter (0,1) — denn in unserem Modell darf <code>abteilung_id</code> NULL sein. Wäre die Zuordnung Pflicht, hieße es (1,1).</p>"}},
  {h3:"Schlüsselarten"},
  {table:{head:["Begriff","Bedeutung"], rows:[
   ["Superschlüssel","jede Attributmenge, die eine Zeile eindeutig identifiziert"],
@@ -2565,8 +2674,11 @@ body:[
   ["Primärschlüssel","der ausgewählte Schlüsselkandidat, NOT NULL und eindeutig"],
   ["Alternativschlüssel","die übrigen Schlüsselkandidaten, meist als UNIQUE umgesetzt"],
   ["Fremdschlüssel","Attribut, das auf den Schlüssel einer anderen Relation verweist"],
-  ["Surrogatschlüssel","künstliche ID ohne fachliche Bedeutung, meist AUTO_INCREMENT"]
+  ["Surrogatschlüssel","künstliche ID ohne fachliche Bedeutung, meist AUTO_INCREMENT"],
+  ["Primärattribut","Attribut, das in <em>mindestens einem</em> Schlüsselkandidaten vorkommt (englisch <em>prime attribute</em>)"],
+  ["Nichtprimärattribut","Attribut, das in <em>keinem</em> Schlüsselkandidaten vorkommt — genau diese Attribute betreffen 2NF und 3NF"]
  ]}},
+ {box:{kind:"warn", title:"Nichtschlüsselattribut ist nicht dasselbe", html:"<p>Umgangssprachlich heißt es oft „Nichtschlüsselattribut“ und gemeint ist „nicht der Primärschlüssel“. Korrekt ist <strong>Nichtprimärattribut</strong>: ein Attribut, das in <em>keinem</em> Schlüsselkandidaten vorkommt. Der Unterschied wird sichtbar, sobald es mehrere Schlüsselkandidaten oder zusammengesetzte Schlüssel gibt — und genau darauf beziehen sich die Definitionen der 2NF und 3NF.</p>"}},
  {p:"Surrogatschlüssel sind in der Praxis der Standard, weil sich fachliche Werte ändern können — eine E-Mail-Adresse oder Personalnummer ist selten dauerhaft stabil. Der Nachteil: Ohne zusätzliches <code>UNIQUE</code> auf den fachlichen Attributen verhindert die ID keine inhaltlichen Dubletten."},
  {h3:"Warum überhaupt normalisieren?"},
  {p:"Eine unnormalisierte Tabelle speichert dieselbe Information mehrfach. Daraus entstehen drei Anomalien:"},
@@ -2579,16 +2691,19 @@ body:[
  {h4:"Ausgangslage: unnormalisiert"},
  {html:"<div class='tblscroll'><table class='grid'><tr><th>mit_nr</th><th>name</th><th>abteilung</th><th>abt_leiter</th><th>geraete</th></tr><tr><td>1</td><td>Brandt</td><td>IT-Systeme</td><td>Wagner</td><td>ThinkPad T14, U2723QE</td></tr><tr><td>2</td><td>Yildiz</td><td>IT-Systeme</td><td>Wagner</td><td>Latitude 5540</td></tr></table></div>"},
  {h4:"1. Normalform — atomare Werte"},
- {p:"Jedes Attribut enthält genau einen Wert; Wiederholungsgruppen und Mehrfachwerte in einer Zelle sind verboten. Die Spalte <code>geraete</code> mit kommagetrennter Liste verletzt das. Auflösung: eine eigene Zeile beziehungsweise eine eigene Tabelle je Gerät."},
+ {p:"Jedes Attribut enthält genau einen Wert; Wiederholungsgruppen und Mehrfachwerte in einer Zelle sind verboten. Außerdem muss die Relation einen Schlüssel besitzen, sodass es keine identischen Zeilen gibt. Die Spalte <code>geraete</code> mit kommagetrennter Liste verletzt die 1NF. Auflösung: je Gerät eine eigene Zeile."},
+ {box:{kind:"", title:"Wichtig für den nächsten Schritt", html:"<p>Durch diese Auflösung identifiziert die Mitarbeiternummer allein keine Zeile mehr — der Schlüssel lautet jetzt (<code>mit_nr</code>, <code>geraet</code>). Erst dieser <strong>zusammengesetzte</strong> Schlüssel macht die 2NF überhaupt zum Thema. In der 1NF geht es dagegen ausschließlich um die Struktur der Werte, nicht um Abhängigkeiten.</p>"}},
  {h4:"2. Normalform — volle funktionale Abhängigkeit"},
- {p:"Voraussetzung ist die 1NF. Zusätzlich muss jedes Nichtschlüsselattribut vom <strong>gesamten</strong> Primärschlüssel abhängen, nicht nur von einem Teil davon. Relevant wird das nur bei zusammengesetzten Schlüsseln: Steht in einer Tabelle mit dem Schlüssel (<code>bestell_id</code>, <code>artikel_id</code>) auch die Spalte <code>artikelbezeichnung</code>, hängt diese allein von <code>artikel_id</code> ab — sie gehört in die Artikeltabelle."},
+ {p:"Voraussetzung ist die 1NF. Zusätzlich muss jedes <strong>Nichtprimärattribut</strong> voll funktional von <em>jedem</em> Schlüsselkandidaten abhängen — also vom ganzen Schlüssel und nicht nur von einem Teil davon. Im Beispiel hängen <code>name</code>, <code>abteilung</code> und <code>abt_leiter</code> allein von <code>mit_nr</code> ab, obwohl der Schlüssel (<code>mit_nr</code>, <code>geraet</code>) lautet: eine partielle Abhängigkeit. Auflösung: Geräte in eine eigene Tabelle."},
+ {p:"Ein weiteres Standardbeispiel: Steht in einer Bestellposition mit dem Schlüssel (<code>bestell_id</code>, <code>artikel_id</code>) auch die <code>artikelbezeichnung</code>, hängt diese allein von <code>artikel_id</code> ab — sie gehört in die Artikeltabelle. Besteht der Schlüssel dagegen aus einem einzigen Attribut, ist die 2NF automatisch erfüllt, denn ein einzelnes Attribut hat keine echten Teilmengen."},
  {h4:"3. Normalform — keine transitiven Abhängigkeiten"},
- {p:"Voraussetzung ist die 2NF. Zusätzlich darf kein Nichtschlüsselattribut von einem anderen Nichtschlüsselattribut abhängen. Im Beispiel hängt <code>abt_leiter</code> nicht von der Mitarbeiternummer ab, sondern von <code>abteilung</code> — eine transitive Abhängigkeit. Auflösung: eigene Abteilungstabelle."},
+ {p:"Voraussetzung ist die 2NF. Zusätzlich darf kein Nichtprimärattribut <strong>transitiv</strong> von einem Schlüsselkandidaten abhängen. Gleichwertig formuliert: Bei jeder Abhängigkeit <code>X → A</code>, in der <code>A</code> ein Nichtprimärattribut ist, muss <code>X</code> ein Superschlüssel sein. Im Beispiel gilt <code>mit_nr → abteilung → abt_leiter</code>: Der Abteilungsleiter hängt nicht direkt an der Mitarbeiternummer, sondern am Umweg über die Abteilung. Auflösung: eigene Abteilungstabelle."},
  {fig:{t:"Abbildung 6 — Von der Redundanz zur dritten Normalform", svg:FIGS.nf, c:"Jede Stufe beseitigt genau eine Art von Abhängigkeit. Am Ende steht jede Information an genau einer Stelle."}},
  {sql:"-- Ergebnis der 3NF: drei Tabellen statt einer\nCREATE TABLE abteilung (\n  id INT PRIMARY KEY,\n  name VARCHAR(40) NOT NULL UNIQUE,\n  leiter_id INT NULL\n);\nCREATE TABLE mitarbeiter (\n  id INT PRIMARY KEY,\n  nachname VARCHAR(40) NOT NULL,\n  abteilung_id INT,\n  FOREIGN KEY (abteilung_id) REFERENCES abteilung(id)\n);\nCREATE TABLE geraet (\n  id INT PRIMARY KEY,\n  modell VARCHAR(40) NOT NULL,\n  mitarbeiter_id INT NULL,\n  FOREIGN KEY (mitarbeiter_id) REFERENCES mitarbeiter(id)\n);", label:"Das Zielmodell in 3NF", run:false},
- {box:{kind:"", title:"Merksatz zur Prüfung", html:"<p><em>Jedes Nichtschlüsselattribut hängt vom Schlüssel (1NF), vom ganzen Schlüssel (2NF) und von nichts als dem Schlüssel (3NF).</em></p>"}},
+ {box:{kind:"exam", title:"Merksatz — und was er wirklich abdeckt", html:"<p><em>„Jedes Nichtprimärattribut beschreibt eine Tatsache über den Schlüssel, den ganzen Schlüssel und nichts als den Schlüssel.“</em></p><p>Der Satz geht auf William Kent zurück und beschreibt <strong>2NF und 3NF</strong>:</p><ul><li><strong>den ganzen Schlüssel</strong> → 2NF: keine Abhängigkeit von einem Teil des Schlüssels.</li><li><strong>nichts als den Schlüssel</strong> → 3NF: keine Abhängigkeit von einem anderen Nichtprimärattribut.</li><li><strong>über den Schlüssel</strong> ist keine Aussage zur 1NF, sondern nur die Voraussetzung, dass überhaupt ein Schlüssel existiert.</li></ul><p>Die <strong>1NF deckt der Merksatz nicht ab</strong> — sie fordert atomare Werte und hat mit funktionalen Abhängigkeiten nichts zu tun. Wer sie in den Satz hineinliest, beantwortet die Prüfungsfrage nach der 1NF falsch.</p>"}},
+ {box:{kind:"warn", title:"Drei häufige Irrtümer", html:"<ol><li><strong>„1NF heißt: hängt vom Schlüssel ab.“</strong> Nein — 1NF fordert ausschließlich atomare Werte ohne Wiederholungsgruppen.</li><li><strong>„Nichtschlüsselattribut = alles außer dem Primärschlüssel.“</strong> Maßgeblich sind die <em>Nichtprimärattribute</em>, also Attribute, die in keinem Schlüsselkandidaten vorkommen.</li><li><strong>„2NF muss man immer prüfen.“</strong> Bei einem einteiligen Schlüssel ist sie automatisch erfüllt; interessant wird sie erst bei zusammengesetzten Schlüsseln.</li></ol>"}},
  {h4:"Boyce-Codd-Normalform und darüber hinaus"},
- {p:"Die BCNF verschärft die 3NF: Jede Determinante muss ein Schlüsselkandidat sein. Sie wird nur bei mehreren sich überlappenden Schlüsselkandidaten relevant. Die 4NF beseitigt mehrwertige Abhängigkeiten, die 5NF Verbundabhängigkeiten. Für die Praxis und die IHK-Prüfung endet die Reise in aller Regel bei der 3NF."},
+ {p:"Die BCNF verschärft die 3NF: Bei <em>jeder</em> nichttrivialen Abhängigkeit <code>X → Y</code> muss <code>X</code> ein Superschlüssel sein — die 3NF lässt hier noch eine Ausnahme zu, wenn das abhängige Attribut selbst ein Primärattribut ist. Relevant wird der Unterschied nur bei mehreren, sich überlappenden Schlüsselkandidaten. Die 4NF beseitigt mehrwertige Abhängigkeiten, die 5NF Verbundabhängigkeiten. Für die Praxis und die IHK-Prüfung endet die Reise in aller Regel bei der 3NF."},
  {h3:"Denormalisierung"},
  {p:"Jede Normalisierungsstufe kostet Joins und damit Lesezeit. In auswertungslastigen Systemen wird deshalb bewusst denormalisiert: redundante Spalten, vorberechnete Summen, Reporting-Tabellen. Das ist eine begründete Abwägung, kein Rückschritt — aber nur sinnvoll, wenn ein Messwert das Problem belegt und die Redundanz kontrolliert gepflegt wird."},
  {sql:"SELECT a.name AS abteilung,\n       COUNT(DISTINCT m.id) AS mitarbeiter,\n       COUNT(DISTINCT g.id) AS geraete,\n       COUNT(DISTINCT t.id) AS tickets\nFROM abteilung a\nLEFT JOIN mitarbeiter m ON m.abteilung_id = a.id\nLEFT JOIN geraet     g ON g.mitarbeiter_id = m.id\nLEFT JOIN ticket     t ON t.mitarbeiter_id = m.id\nGROUP BY a.id, a.name\nORDER BY mitarbeiter DESC;", label:"Das normalisierte Modell in Aktion", run:true},
@@ -2707,7 +2822,7 @@ lead:"Ein Datenbankbenutzer in MySQL ist immer ein Paar aus Name und Herkunft. W
 body:[
  {h3:"Benutzer anlegen"},
  {sql:"CREATE USER 'app_web'@'10.0.0.%'\n  IDENTIFIED BY 'ein-langes-zufaelliges-passwort'\n  PASSWORD EXPIRE INTERVAL 180 DAY;\n\nCREATE USER 'backup'@'localhost'\n  IDENTIFIED BY '…'\n  REQUIRE SSL;", label:"Benutzer mit Herkunftsangabe", run:false},
- {p:"<code>'name'@'host'</code> ist der vollständige Bezeichner. <code>'app'@'localhost'</code> und <code>'app'@'%'</code> sind zwei verschiedene Konten mit möglicherweise unterschiedlichen Rechten. Ein <code>%</code> im Hostteil erlaubt Verbindungen von überall und sollte auf ein Netzsegment eingegrenzt werden. Standard-Authentifizierungsplugin ist seit MySQL 8.0 <code>caching_sha2_password</code>; das alte <code>mysql_native_password</code> wurde in MySQL 9.0 vollständig entfernt."},
+ {p:"<code>'name'@'host'</code> ist der vollständige Bezeichner. <code>'app'@'localhost'</code> und <code>'app'@'%'</code> sind zwei verschiedene Konten mit möglicherweise unterschiedlichen Rechten. Ein <code>%</code> im Hostteil erlaubt Verbindungen von überall und sollte auf ein Netzsegment eingegrenzt werden. Standard-Authentifizierungsplugin ist seit MySQL 8.0 <code>caching_sha2_password</code>; das alte <code>mysql_native_password</code> ist in 8.4 standardmäßig abgeschaltet und wurde in MySQL 9.0 vollständig entfernt."},
  {h3:"Rechte vergeben"},
  {sql:"-- Anwendungskonto: nur Datenzugriff, keine Strukturänderung\nGRANT SELECT, INSERT, UPDATE, DELETE\n  ON it_betrieb.* TO 'app_web'@'10.0.0.%';\n\n-- Auswertungskonto: nur lesen, nur eine Tabelle\nGRANT SELECT ON it_betrieb.v_abteilungsuebersicht TO 'report'@'localhost';\n\nREVOKE DELETE ON it_betrieb.* FROM 'app_web'@'10.0.0.%';\nSHOW GRANTS FOR 'app_web'@'10.0.0.%';", label:"GRANT und REVOKE", run:false},
  {table:{head:["Ebene","Schreibweise","Reichweite"], rows:[
@@ -2745,13 +2860,13 @@ kicker:"Kapitel 15 · Betrieb",
 lead:"Ein Backup, das nie zurückgespielt wurde, ist kein Backup, sondern eine Hoffnung. Dieses Kapitel behandelt Sicherung, Wiederherstellung, Replikation und den Weg auf eine aktuelle Version.",
 body:[
  {h3:"Logisches Backup mit mysqldump"},
- {sql:"# Eine Datenbank sichern — konsistent, ohne Tabellen zu sperren (InnoDB)\nmysqldump -u backup -p --single-transaction --routines --triggers --events \\\n          --databases it_betrieb > it_betrieb_2026-08-03.sql\n\n# Alle Datenbanken inklusive Benutzerkonten\nmysqldump -u root -p --all-databases --single-transaction > voll.sql\n\n# Wiederherstellen\nmysql -u root -p it_betrieb < it_betrieb_2026-08-03.sql", label:"Die Befehle, die man auswendig können sollte", run:false},
+ {sql:"# Eine Datenbank sichern — konsistent, ohne Tabellen zu sperren (InnoDB)\nmysqldump -u backup -p --single-transaction --routines --triggers --events \\\n          --databases it_betrieb > it_betrieb_2026-08-03.sql\n\n# Alle Datenbanken inklusive Benutzerkonten\nmysqldump -u root -p --all-databases --single-transaction --source-data=2 > voll.sql\n\n# Wiederherstellen\nmysql -u root -p it_betrieb < it_betrieb_2026-08-03.sql", label:"Die Befehle, die man auswendig können sollte", run:false},
  {table:{head:["Option","Wirkung"], rows:[
   ["--single-transaction","konsistenter Schnappschuss über eine Transaktion, ohne Schreibsperre (nur InnoDB)"],
   ["--routines --triggers --events","nimmt Prozeduren, Trigger und Events mit — sonst fehlen sie im Dump"],
   ["--no-data","nur die Struktur sichern"],
   ["--where=\"…\"","gezielt Teilmengen exportieren"],
-  ["--master-data=2","schreibt die Binlog-Position als Kommentar mit — Basis für Point-in-Time-Recovery"]
+  ["--source-data=2","schreibt die Binlog-Position als Kommentar mit — Basis für Point-in-Time-Recovery. Der ältere Name <code>--master-data</code> ist seit 8.0.26 nur noch ein veralteter Alias."]
  ]}},
  {box:{kind:"warn", title:"Ohne --single-transaction", html:"<p>läuft mysqldump mit <code>--lock-tables</code> und sperrt während des gesamten Exports. Auf einem produktiven Server steht damit die Anwendung. Bei MyISAM-Tabellen bleibt allerdings nur diese Variante, weil es dort keine Transaktionen gibt.</p>"}},
  {h3:"Logisch oder physisch?"},
@@ -2771,7 +2886,7 @@ body:[
  {sql:"[mysqld]\nbind-address            = 127.0.0.1\ncharacter-set-server    = utf8mb4\ncollation-server        = utf8mb4_0900_ai_ci\ninnodb_buffer_pool_size = 8G\ninnodb_flush_log_at_trx_commit = 1\nmax_connections         = 200\nslow_query_log          = 1\nlong_query_time         = 1\nlog_bin                 = /var/log/mysql/binlog", label:"Eine typische my.cnf für einen kleinen Server", run:false},
  {p:"Die Konfiguration liegt unter Linux üblicherweise in <code>/etc/mysql/my.cnf</code> oder <code>/etc/my.cnf</code>, unter Windows in <code>my.ini</code>. <code>innodb_flush_log_at_trx_commit = 1</code> ist die einzige Einstellung, die vollständige ACID-Dauerhaftigkeit garantiert; Werte von 0 oder 2 sind schneller, können aber bei Stromausfall die letzte Sekunde an Transaktionen verlieren."},
  {h3:"Upgrade-Pfad 2026"},
- {p:"MySQL 8.0 ist im April 2026 mit Version 8.0.46 End of Life gegangen — Server auf dieser Version bekommen keine Sicherheitsupdates mehr. Der reguläre Weg führt auf <strong>8.4 LTS</strong> oder <strong>9.7 LTS</strong>. Vor jedem Upgrade prüft <code>mysql-shell</code> mit <code>util.checkForServerUpgrade()</code> auf Inkompatibilitäten. Wichtig bei Sprüngen auf 9.x: <code>mysql_native_password</code> ist entfernt, ebenso einige Storage Engines wie MEMORY, ARCHIVE und FEDERATED."},
+ {p:"MySQL 8.0 ist im April 2026 mit Version 8.0.46 End of Life gegangen — Server auf dieser Version bekommen keine Sicherheitsupdates mehr. Der reguläre Weg führt auf <strong>8.4 LTS</strong> oder <strong>9.7 LTS</strong>. Vor jedem Upgrade prüft <code>mysql-shell</code> mit <code>util.checkForServerUpgrade()</code> auf Inkompatibilitäten. Die beiden häufigsten Stolpersteine: In 8.4 ist die Servervariable <code>default_authentication_plugin</code> verschwunden — an ihre Stelle tritt <code>authentication_policy</code> — und <code>mysql_native_password</code> ist dort abgeschaltet, in 9.0 sogar vollständig entfernt. Storage Engines wurden dabei übrigens keine entfernt; MyISAM, MEMORY, ARCHIVE und FEDERATED existieren weiterhin, sind aber allesamt keine Empfehlung mehr."},
  {box:{kind:"tip", title:"Betriebs-Checkliste", html:"<ul><li>Backup automatisiert, überwacht und <strong>regelmäßig testweise zurückgespielt</strong>.</li><li>Binärlog aktiv, Aufbewahrungsdauer bewusst gesetzt.</li><li>Sicherungen an einem zweiten Ort, getrennt vom Produktivsystem.</li><li>Monitoring auf Verbindungen, Replikationsverzögerung, Plattenplatz und Buffer-Pool-Trefferquote.</li><li>Updateplan: LTS-Linie wählen und Quartalspatches einspielen.</li></ul>"}}
 ],
 tasks:[
@@ -2787,7 +2902,7 @@ lead:"Nicht alles passt in Spalten. MySQL kann halbstrukturierte Dokumente, Voll
 body:[
  {h3:"Der JSON-Datentyp"},
  {p:"Eine <code>JSON</code>-Spalte speichert ein validiertes Dokument in einem binären Format, das den direkten Zugriff auf einzelne Schlüssel erlaubt — anders als ein <code>TEXT</code>-Feld, in dem dieselben Daten nur eine Zeichenkette wären. Ungültiges JSON wird beim Einfügen abgelehnt."},
- {sql:"CREATE TABLE geraet_details (\n  geraet_id INT UNSIGNED PRIMARY KEY,\n  spezifikation JSON NOT NULL,\n  CHECK (JSON_VALID(spezifikation))\n);\n\nINSERT INTO geraet_details VALUES\n  (1, '{\"cpu\": \"i7-1365U\", \"ram_gb\": 32, \"ports\": [\"USB-C\", \"HDMI\"], \"garantie\": {\"jahre\": 3, \"vorort\": true}}');", label:"JSON-Spalte anlegen und befüllen", run:false},
+ {sql:"CREATE TABLE geraet_details (\n  geraet_id INT UNSIGNED PRIMARY KEY,\n  spezifikation JSON NOT NULL          -- die Gültigkeit prüft MySQL selbst\n);\n\nINSERT INTO geraet_details VALUES\n  (1, '{\"cpu\": \"i7-1365U\", \"ram_gb\": 32, \"ports\": [\"USB-C\", \"HDMI\"], \"garantie\": {\"jahre\": 3, \"vorort\": true}}');", label:"JSON-Spalte anlegen und befüllen", run:false},
  {h4:"Zugriff auf einzelne Werte"},
  {sql:"SELECT\n  spezifikation->>'$.cpu'               AS cpu,\n  spezifikation->'$.ram_gb'             AS ram,\n  spezifikation->>'$.ports[0]'          AS erster_port,\n  spezifikation->>'$.garantie.jahre'    AS garantie_jahre,\n  JSON_LENGTH(spezifikation, '$.ports') AS anzahl_ports\nFROM geraet_details;", label:"Pfadausdrücke mit -> und ->>", run:false},
  {table:{head:["Schreibweise","Bedeutung"], rows:[
@@ -2800,21 +2915,23 @@ body:[
  ]}},
  {box:{kind:"warn", title:"JSON ist kein Ersatz für Normalisierung", html:"<p>Alles, wonach regelmäßig gefiltert, gruppiert oder verknüpft wird, gehört in eine eigene Spalte. JSON ist die richtige Wahl für <em>optionale, wechselnde</em> Zusatzattribute — etwa Gerätespezifikationen, die sich je Typ unterscheiden. Wer ein ganzes Datenmodell in JSON ablegt, verliert Constraints, Fremdschlüssel und effiziente Indizes.</p>"}},
  {h4:"JSON indizieren"},
- {p:"Auf eine JSON-Spalte selbst lässt sich kein Index legen. Der Umweg führt über eine <strong>generierte Spalte</strong>, die einen Wert aus dem Dokument herauszieht und dann ganz normal indiziert wird."},
- {sql:"ALTER TABLE geraet_details\n  ADD COLUMN ram_gb INT\n    GENERATED ALWAYS AS (spezifikation->>'$.ram_gb') STORED,\n  ADD INDEX idx_ram (ram_gb);\n\nSELECT geraet_id, ram_gb FROM geraet_details WHERE ram_gb >= 32;", label:"Generierte Spalte plus Index", run:false},
+ {p:"Auf eine JSON-Spalte als Ganzes lässt sich kein gewöhnlicher Index legen. Der Umweg führt über eine <strong>generierte Spalte</strong>, die einen Wert aus dem Dokument herauszieht und dann ganz normal indiziert wird."},
+ {box:{kind:"tip", title:"Ausnahme: mehrwertige Indizes", html:"<p>Seit MySQL 8.0.17 gibt es <em>multi-valued indexes</em> direkt auf JSON-Arrays: <code>INDEX idx_ports ((CAST(spezifikation-&gt;&#39;$.ports&#39; AS CHAR(20) ARRAY)))</code>. Abgefragt werden sie mit <code>MEMBER OF</code>, <code>JSON_CONTAINS</code> oder <code>JSON_OVERLAPS</code> — für alles andere bleibt die generierte Spalte der Weg.</p>"}},
+ {sql:"ALTER TABLE geraet_details\n  ADD COLUMN ram_gb INT\n    GENERATED ALWAYS AS (CAST(spezifikation->>'$.ram_gb' AS UNSIGNED)) STORED,\n  ADD INDEX idx_ram (ram_gb);\n\nSELECT geraet_id, ram_gb FROM geraet_details WHERE ram_gb >= 32;", label:"Generierte Spalte plus Index", run:false},
  {p:"<code>STORED</code> speichert den Wert physisch, <code>VIRTUAL</code> berechnet ihn beim Lesen. Für Indizes ist beides möglich; STORED kostet Platz, VIRTUAL kostet Rechenzeit. Generierte Spalten funktionieren übrigens auch ohne JSON — etwa für einen Index auf <code>YEAR(erstellt)</code>, der sonst nicht nutzbar wäre."},
  {h3:"Volltextsuche"},
  {p:"Ein <code>LIKE '%wort%'</code> durchsucht jede Zeile und ignoriert jeden Index. Für echte Textsuche gibt es <code>FULLTEXT</code>-Indizes, die eine Wortliste aufbauen und zusätzlich eine Relevanzbewertung liefern."},
  {sql:"ALTER TABLE ticket ADD FULLTEXT INDEX ft_titel (titel);\n\n-- natürliche Sprache: sortiert nach Relevanz\nSELECT id, titel,\n       MATCH(titel) AGAINST('Datenbank Backup') AS relevanz\nFROM ticket\nWHERE MATCH(titel) AGAINST('Datenbank Backup')\nORDER BY relevanz DESC;\n\n-- Boolescher Modus: + muss, - darf nicht, * Wortanfang\nSELECT id, titel\nFROM ticket\nWHERE MATCH(titel) AGAINST('+Datenbank -Restore' IN BOOLEAN MODE);", label:"FULLTEXT und MATCH … AGAINST", run:false},
  {table:{head:["Modus","Verhalten"], rows:[
   ["NATURAL LANGUAGE MODE","Standard. Sortiert nach Relevanz, ignoriert Stoppwörter"],
-  ["BOOLEAN MODE","Operatoren + - * \" \" ( ) — kein Relevanzranking, keine 50-Prozent-Regel"],
+  ["BOOLEAN MODE","Operatoren + - * \" \" ( ) — Treffer werden nicht nach Relevanz gewichtet"],
   ["WITH QUERY EXPANSION","zweiter Suchlauf mit den Wörtern der besten Treffer"]
  ]}},
- {box:{kind:"tip", title:"Deutsche Texte", html:"<p>Der Standard-Parser trennt an Wortgrenzen und hat eine Mindestwortlänge von drei Zeichen (<code>innodb_ft_min_token_size</code>). Für Sprachen ohne Leerzeichen gibt es den ngram-Parser. Zusammengesetzte deutsche Wörter findet die Volltextsuche nur mit Platzhalter im Boolean Mode: <code>'Daten*'</code>.</p>"}},
+ {box:{kind:"tip", title:"Deutsche Texte", html:"<p>Der Standard-Parser trennt an Wortgrenzen und hat in InnoDB eine Mindestwortlänge von drei Zeichen (<code>innodb_ft_min_token_size</code>; MyISAM verwendet <code>ft_min_word_len</code> mit vier). Für Sprachen ohne Leerzeichen gibt es den ngram-Parser. Zusammengesetzte deutsche Wörter findet die Volltextsuche nur mit Platzhalter im Boolean Mode: <code>'Daten*'</code>.</p><p>Die oft zitierte 50-Prozent-Regel — Wörter, die in mehr als der Hälfte aller Zeilen vorkommen, gelten als bedeutungslos — betrifft ausschließlich <strong>MyISAM</strong>-Volltextindizes. In InnoDB gibt es sie nicht.</p>"}},
  {h3:"Geodaten"},
- {sql:"ALTER TABLE abteilung\n  ADD COLUMN position POINT SRID 4326,\n  ADD SPATIAL INDEX sp_position (position);\n\nUPDATE abteilung\n   SET position = ST_SRID(POINT(13.4050, 52.5200), 4326)\n WHERE standort = 'Berlin';\n\n-- Entfernung in Metern zwischen zwei Punkten\nSELECT name,\n       ROUND(ST_Distance_Sphere(position, ST_SRID(POINT(13.3777, 52.5163), 4326))) AS meter\nFROM abteilung\nWHERE position IS NOT NULL\nORDER BY meter;", label:"Punkte speichern und Entfernungen rechnen", run:false},
- {p:"Der <strong>SRID</strong> legt das Koordinatensystem fest — 4326 ist WGS 84, also die üblichen GPS-Koordinaten. Achtung bei der Reihenfolge: <code>POINT(x, y)</code> erwartet in SRID 4326 Länge und Breite in dieser Reihenfolge. Ein <code>SPATIAL INDEX</code> setzt <code>NOT NULL</code> voraus und beschleunigt Umkreissuchen erheblich."},
+ {sql:"ALTER TABLE abteilung\n  ADD COLUMN position POINT SRID 4326 NOT NULL,\n  ADD SPATIAL INDEX sp_position (position);\n\n-- SRID 4326: erst Breite, dann Länge!\nUPDATE abteilung\n   SET position = ST_SRID(POINT(52.5200, 13.4050), 4326)\n WHERE standort = 'Berlin';\n\n-- Entfernung in Metern zwischen zwei Punkten\nSELECT name,\n       ST_Latitude(position)  AS breite,\n       ST_Longitude(position) AS laenge,\n       ROUND(ST_Distance_Sphere(position, ST_SRID(POINT(52.5163, 13.3777), 4326))) AS meter\nFROM abteilung\nORDER BY meter;", label:"Punkte speichern und Entfernungen rechnen", run:false},
+ {p:"Der <strong>SRID</strong> legt das Koordinatensystem fest — 4326 ist WGS 84, also die üblichen GPS-Koordinaten. Ein <code>SPATIAL INDEX</code> setzt <code>NOT NULL</code> voraus und beschleunigt Umkreissuchen erheblich."},
+ {box:{kind:"warn", title:"Die Achsenreihenfolge ist die häufigste Fehlerquelle", html:"<p>MySQL folgt bei geografischen Koordinatensystemen der EPSG-Definition. Für SRID 4326 lautet die Achsenfolge deshalb <strong>Breite, dann Länge</strong> — <code>POINT(52.52, 13.41)</code> für Berlin, nicht umgekehrt. Wer die Werte vertauscht, landet je nach Ort hunderte Kilometer daneben.</p><p>Zwei Auswege: <code>ST_GeomFromText(&#39;POINT(13.41 52.52)&#39;, 4326, &#39;axis-order=long-lat&#39;)</code> dreht die Reihenfolge explizit um, und <code>ST_Latitude()</code> beziehungsweise <code>ST_Longitude()</code> (ab 8.0.12) lesen die Werte unmissverständlich aus.</p><p>Verwirrend ist die Ausnahme: Bei <code>SRID 0</code> — also ohne Koordinatensystem — deutet <code>ST_Distance_Sphere()</code> die X-Koordinate als Länge und Y als Breite. Genau daher stammen die vielen widersprüchlichen Beispiele im Netz.</p>"}},
  {h3:"Vektoren für KI-Anwendungen"},
  {p:"Seit MySQL 9.0 gibt es den Typ <code>VECTOR</code>. Er speichert ein Array aus 4-Byte-Gleitkommazahlen — typischerweise das Embedding eines Textes oder Bildes. Damit lässt sich Ähnlichkeit statt Gleichheit suchen: Welche Dokumente passen inhaltlich zur Anfrage, auch wenn sie andere Wörter verwenden?"},
  {sql:"CREATE TABLE wissensartikel (\n  id        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,\n  titel     VARCHAR(120) NOT NULL,\n  inhalt    TEXT,\n  embedding VECTOR(768)\n);\n\nINSERT INTO wissensartikel (titel, embedding)\nVALUES ('VPN einrichten', STRING_TO_VECTOR('[0.12, -0.44, 0.98]'));\n\nSELECT titel,\n       DISTANCE(embedding, STRING_TO_VECTOR(@anfrage), 'COSINE') AS naehe\nFROM wissensartikel\nORDER BY naehe\nLIMIT 5;", label:"Ähnlichkeitssuche über Embeddings", run:false},
@@ -2908,8 +3025,8 @@ body:[
  ]}},
  {box:{kind:"warn", title:"Benannte statt nummerierter Platzhalter", html:"<p>Bei mehr als zwei Parametern sind benannte Platzhalter wie <code>:status</code> deutlich weniger fehleranfällig als Fragezeichen — die Reihenfolge kann dann nicht mehr verrutschen.</p>"}},
  {h3:"Java mit JDBC"},
- {sql:"String url = \"jdbc:mysql://localhost:3306/it_betrieb\"\n           + \"?useUnicode=true&characterEncoding=UTF-8\"\n           + \"&serverTimezone=Europe/Berlin\";\n\ntry (Connection con = DriverManager.getConnection(url, \"app_web\", passwort);\n     PreparedStatement ps = con.prepareStatement(\n         \"SELECT id, titel FROM ticket WHERE status = ? ORDER BY erstellt DESC\")) {\n\n    ps.setString(1, \"offen\");\n\n    try (ResultSet rs = ps.executeQuery()) {\n        while (rs.next()) {\n            System.out.println(rs.getInt(\"id\") + \": \" + rs.getString(\"titel\"));\n        }\n    }\n}", label:"try-with-resources schließt Verbindung, Statement und ResultSet zuverlässig", run:false},
- {p:"Der Treiber heißt <strong>Connector/J</strong> und wird als Abhängigkeit eingebunden. Wichtig ist die Zeitzone in der URL: Ohne <code>serverTimezone</code> weigert sich der Treiber in manchen Konstellationen zu verbinden oder verschiebt Zeitstempel. Ergebnismengen werden über <code>rs.next()</code> zeilenweise durchlaufen — der Cursor steht anfangs <em>vor</em> der ersten Zeile."},
+ {sql:"String url = \"jdbc:mysql://localhost:3306/it_betrieb\"\n           + \"?useUnicode=true&characterEncoding=UTF-8\"\n           + \"&connectionTimeZone=Europe/Berlin\";\n\ntry (Connection con = DriverManager.getConnection(url, \"app_web\", passwort);\n     PreparedStatement ps = con.prepareStatement(\n         \"SELECT id, titel FROM ticket WHERE status = ? ORDER BY erstellt DESC\")) {\n\n    ps.setString(1, \"offen\");\n\n    try (ResultSet rs = ps.executeQuery()) {\n        while (rs.next()) {\n            System.out.println(rs.getInt(\"id\") + \": \" + rs.getString(\"titel\"));\n        }\n    }\n}", label:"try-with-resources schließt Verbindung, Statement und ResultSet zuverlässig", run:false},
+ {p:"Der Treiber heißt <strong>Connector/J</strong> und wird als Abhängigkeit eingebunden. Wichtig ist die Zeitzone in der URL: Ohne Angabe verschiebt der Treiber Zeitstempel oder verweigert in manchen Konstellationen den Verbindungsaufbau. Der Parameter heißt seit Connector/J 8.0.23 <code>connectionTimeZone</code>; der ältere Name <code>serverTimezone</code> funktioniert weiterhin als Alias. Ergebnismengen werden über <code>rs.next()</code> zeilenweise durchlaufen — der Cursor steht anfangs <em>vor</em> der ersten Zeile."},
  {h3:"Transaktionen im Code"},
  {sql:"// Java\ncon.setAutoCommit(false);\ntry {\n    ps1.executeUpdate();\n    ps2.executeUpdate();\n    con.commit();\n} catch (SQLException e) {\n    con.rollback();\n    throw e;\n} finally {\n    con.setAutoCommit(true);\n}\n\n// PHP\n$pdo->beginTransaction();\ntry {\n    $pdo->prepare('UPDATE konto SET saldo = saldo - ? WHERE id = ?')->execute([500, 1]);\n    $pdo->prepare('UPDATE konto SET saldo = saldo + ? WHERE id = ?')->execute([500, 2]);\n    $pdo->commit();\n} catch (Throwable $e) {\n    $pdo->rollBack();\n    throw $e;\n}", label:"Dasselbe Muster in beiden Sprachen", run:false},
  {h3:"Verbindungen verwalten"},
@@ -3109,8 +3226,8 @@ const QUIZ = [
 {cat:"Objekte",q:"Was ist der Hauptvorteil von Prepared Statements?",a:["Kürzerer Code","Trennung von Anweisung und Daten — SQL-Injection wird strukturell unmöglich","Automatische Indizes","Bessere Formatierung"],c:1,e:"Zusätzlich spart der Server Parse-Zeit bei wiederholter Ausführung."},
 {cat:"Objekte",q:"Welche Einstellung muss aktiv sein, damit Events ausgeführt werden?",a:["autocommit = 1","event_scheduler = ON","general_log = ON","log_bin = ON"],c:1,e:"Der Event Scheduler ist standardmäßig deaktiviert."},
 
-{cat:"Normalisierung",q:"Was fordert die 1. Normalform?",a:["Keine transitiven Abhängigkeiten","Atomare Werte, keine Wiederholungsgruppen","Einen Primärschlüssel","Volle funktionale Abhängigkeit"],c:1,e:"Jedes Attribut enthält genau einen Wert — keine Listen in einer Zelle."},
-{cat:"Normalisierung",q:"Was fordert die 2. Normalform zusätzlich zur 1NF?",a:["Keine transitiven Abhängigkeiten","Volle funktionale Abhängigkeit vom gesamten Primärschlüssel","Fremdschlüssel für alle Beziehungen","Atomare Werte"],c:1,e:"Relevant nur bei zusammengesetzten Schlüsseln: kein Attribut darf von einem Teil des Schlüssels abhängen."},
+{cat:"Normalisierung",q:"Was fordert die 1. Normalform?",a:["Keine transitiven Abhängigkeiten","Atomare Werte, keine Wiederholungsgruppen","Volle funktionale Abhängigkeit vom Schlüssel","Keine Redundanz"],c:1,e:"Jedes Attribut enthält genau einen Wert — keine Listen in einer Zelle. Mit funktionalen Abhängigkeiten hat die 1NF nichts zu tun."},
+{cat:"Normalisierung",q:"Was fordert die 2. Normalform zusätzlich zur 1NF?",a:["Keine transitiven Abhängigkeiten","Volle funktionale Abhängigkeit jedes Nichtprimärattributs vom ganzen Schlüssel","Fremdschlüssel für alle Beziehungen","Atomare Werte"],c:1,e:"Kein Nichtprimärattribut darf von einem Teil des Schlüssels abhängen. Relevant nur bei zusammengesetzten Schlüsseln."},
 {cat:"Normalisierung",q:"Welche Anomalie beschreibt der Fall, dass mit dem letzten Mitarbeiter auch die Abteilungsinformation verschwindet?",a:["Einfügeanomalie","Änderungsanomalie","Löschanomalie","Leseanomalie"],c:2,e:"Löschanomalie: Beim Entfernen eines Datensatzes gehen zusätzliche Informationen unbeabsichtigt verloren."},
 {cat:"Normalisierung",q:"Was ist ein Schlüsselkandidat?",a:["Jede Spaltenkombination","Ein minimaler Superschlüssel, bei dem kein Attribut entbehrlich ist","Der Primärschlüssel","Ein Fremdschlüssel"],c:1,e:"Aus den Schlüsselkandidaten wird einer als Primärschlüssel gewählt, die übrigen sind Alternativschlüssel."},
 {cat:"Normalisierung",q:"Welche Kardinalität hat 'Eine Abteilung hat viele Mitarbeiter, ein Mitarbeiter gehört zu einer Abteilung'?",a:["1:1","1:n","n:m","n:1 und 1:n gleichzeitig"],c:1,e:"1:n. Der Fremdschlüssel steht auf der n-Seite, also in der Mitarbeitertabelle."},
@@ -3384,6 +3501,22 @@ QUIZ.push(
 {cat:"Prüfung",q:"Was tun, wenn eine SQL-Prüfungsaufgabe nicht vollständig gelingt?",a:["Feld leer lassen","So viel wie möglich hinschreiben — Teilpunkte gibt es für richtige Elemente","Eine andere Aufgabe doppelt lösen","Nur Stichworte"],c:1,e:"Bewertet werden Schlüsselwörter, Tabellen, Bedingungen und Verknüpfungen einzeln."}
 );
 
+QUIZ.push(
+{cat:"Normalisierung",q:"Welche Normalform beschreibt der Merksatz „der Schlüssel, der ganze Schlüssel und nichts als der Schlüssel“?",a:["Nur die 1NF","2NF und 3NF","1NF bis 3NF","BCNF"],c:1,e:"„Der ganze Schlüssel“ meint die 2NF, „nichts als der Schlüssel“ die 3NF. Die 1NF fordert dagegen atomare Werte und ist im Merksatz nicht enthalten."},
+{cat:"Normalisierung",q:"Was ist ein Nichtprimärattribut?",a:["Jedes Attribut außer dem Primärschlüssel","Ein Attribut, das in keinem Schlüsselkandidaten vorkommt","Ein Fremdschlüssel","Ein Attribut ohne NOT NULL"],c:1,e:"Auf genau diese Attribute beziehen sich die Definitionen von 2NF und 3NF — der lockere Begriff „Nichtschlüsselattribut“ trifft es bei mehreren Schlüsselkandidaten nicht."},
+{cat:"Normalisierung",q:"Wann ist die 2. Normalform automatisch erfüllt?",a:["Nie","Wenn der Schlüssel aus einem einzigen Attribut besteht","Bei InnoDB","Wenn es Fremdschlüssel gibt"],c:1,e:"Ein einzelnes Attribut hat keine echten Teilmengen, deshalb sind partielle Abhängigkeiten unmöglich."},
+{cat:"Normalisierung",q:"Wie lautet die formale Bedingung der 3NF für eine Abhängigkeit X → A?",a:["X muss ein Fremdschlüssel sein","Ist A ein Nichtprimärattribut, muss X ein Superschlüssel sein","A muss NOT NULL sein","X darf nicht zusammengesetzt sein"],c:1,e:"Damit sind transitive Abhängigkeiten ausgeschlossen. Die BCNF verlangt das zusätzlich auch dann, wenn A ein Primärattribut ist."},
+{cat:"Normalisierung",q:"Warum entsteht beim Auflösen einer Mehrfachwertspalte oft erst ein 2NF-Verstoß?",a:["Weil Daten verloren gehen","Weil der Schlüssel dadurch zusammengesetzt wird und übrige Attribute nur von einem Teil abhängen","Weil Indizes fehlen","Das passiert nie"],c:1,e:"Aus mit_nr wird (mit_nr, geraet); name und abteilung hängen weiterhin nur von mit_nr ab — eine partielle Abhängigkeit."}
+);
+
+QUIZ.push(
+{cat:"JSON & Suche",q:"In welcher Reihenfolge erwartet MySQL die Koordinaten bei SRID 4326?",a:["Länge, dann Breite","Breite, dann Länge","Beliebig","X, Y in Metern"],c:1,e:"MySQL folgt der EPSG-Definition: erst Latitude, dann Longitude. Mit der Option 'axis-order=long-lat' in ST_GeomFromText lässt sich das umdrehen. Ausnahme: Bei SRID 0 deutet ST_Distance_Sphere X als Länge."},
+{cat:"JSON & Suche",q:"Für welche Storage Engine gilt die 50-Prozent-Regel bei der Volltextsuche?",a:["InnoDB","MyISAM","Beide","Keine"],c:1,e:"Nur MyISAM verwirft Wörter, die in mehr als der Hälfte der Zeilen vorkommen. InnoDB-Volltextindizes kennen diese Regel nicht."},
+{cat:"Betrieb",q:"Wie heißt die aktuelle mysqldump-Option für die Binlog-Position?",a:["--master-data","--source-data","--binlog-pos","--gtid"],c:1,e:"--master-data ist seit MySQL 8.0.26 nur noch ein veralteter Alias für --source-data."},
+{cat:"Betrieb",q:"Welche Servervariable ersetzt in MySQL 8.4 das entfallene default_authentication_plugin?",a:["auth_plugin","authentication_policy","password_policy","caching_policy"],c:1,e:"authentication_policy legt fest, welche Authentifizierungsplugins zulässig sind. mysql_native_password ist in 8.4 abgeschaltet und in 9.0 entfernt."},
+{cat:"Grundlagen",q:"Welche Storage Engines wurden mit MySQL 9.0 entfernt?",a:["MEMORY und ARCHIVE","FEDERATED","MyISAM","Keine"],c:3,e:"In 9.0 wurde keine Storage Engine entfernt — MyISAM, MEMORY, ARCHIVE und FEDERATED existieren weiterhin, gelten aber als Altlasten. Entfernt wurde das Plugin mysql_native_password."}
+);
+
 /* ---------- Karteikarten ---------- */
 const CARDS = [
 {c:"Grundlagen", f:"DBMS", b:"Datenbank-Managementsystem — die Software, die Datenbanken verwaltet. MySQL ist ein DBMS, SQL die Sprache."},
@@ -3427,12 +3560,14 @@ const CARDS = [
 {c:"Fenster", f:"ROW_NUMBER / RANK / DENSE_RANK", b:"Bei Gleichstand: 1,2,3 — 1,1,3 — 1,1,2. ROW_NUMBER ist immer eindeutig."},
 {c:"Fenster", f:"OVER (PARTITION BY …)", b:"Rechnet gruppenweise wie GROUP BY, behält aber alle Eingabezeilen im Ergebnis."},
 {c:"Fenster", f:"Fensterfunktion filtern", b:"Nicht mit WHERE oder HAVING möglich — sie wird danach berechnet. Umweg über CTE oder abgeleitete Tabelle."},
-{c:"Normalisierung", f:"1. Normalform", b:"Atomare Werte: keine Listen oder Wiederholungsgruppen in einer Zelle."},
-{c:"Normalisierung", f:"2. Normalform", b:"1NF und volle funktionale Abhängigkeit vom gesamten Primärschlüssel — relevant nur bei zusammengesetzten Schlüsseln."},
-{c:"Normalisierung", f:"3. Normalform", b:"2NF und keine transitiven Abhängigkeiten: kein Nichtschlüsselattribut hängt von einem anderen Nichtschlüsselattribut ab."},
-{c:"Normalisierung", f:"Merksatz zur 3NF", b:"Jedes Nichtschlüsselattribut hängt vom Schlüssel, vom ganzen Schlüssel und von nichts als dem Schlüssel ab."},
+{c:"Normalisierung", f:"1. Normalform", b:"Atomare Werte: keine Listen oder Wiederholungsgruppen in einer Zelle; außerdem existiert ein Schlüssel, also keine doppelten Zeilen. Mit funktionalen Abhängigkeiten hat die 1NF nichts zu tun."},
+{c:"Normalisierung", f:"2. Normalform", b:"1NF und: jedes Nichtprimärattribut hängt voll funktional vom <em>ganzen</em> Schlüssel ab, nicht von einem Teil. Bei einteiligem Schlüssel automatisch erfüllt."},
+{c:"Normalisierung", f:"3. Normalform", b:"2NF und: kein Nichtprimärattribut hängt transitiv vom Schlüssel ab. Gleichwertig: bei X → A mit A nichtprimär muss X ein Superschlüssel sein."},
+{c:"Normalisierung", f:"Merksatz (deckt 2NF + 3NF ab)", b:"„Jedes Nichtprimärattribut beschreibt eine Tatsache über den Schlüssel, den ganzen Schlüssel (2NF) und nichts als den Schlüssel (3NF).“ Achtung: Die 1NF ist damit <em>nicht</em> beschrieben — sie fordert atomare Werte."},
 {c:"Normalisierung", f:"Die drei Anomalien", b:"Einfüge-, Änderungs- und Löschanomalie — alle drei entstehen aus Redundanz."},
 {c:"Normalisierung", f:"Schlüsselkandidat", b:"Minimaler Superschlüssel: identifiziert eindeutig, und kein Attribut ist entbehrlich. Einer davon wird Primärschlüssel."},
+{c:"Normalisierung", f:"Nichtprimärattribut", b:"Attribut, das in <em>keinem</em> Schlüsselkandidaten vorkommt. Genau auf diese Attribute beziehen sich 2NF und 3NF — nicht auf „alles außer dem Primärschlüssel“."},
+{c:"Normalisierung", f:"BCNF", b:"Bei jeder nichttrivialen Abhängigkeit X → Y muss X ein Superschlüssel sein. Verschärft die 3NF, die noch eine Ausnahme für Primärattribute zulässt."},
 {c:"Normalisierung", f:"Surrogatschlüssel", b:"Künstliche ID ohne fachliche Bedeutung (AUTO_INCREMENT). Stabil, ersetzt aber kein UNIQUE auf den Fachdaten."},
 {c:"Performance", f:"B+-Baum", b:"Indexstruktur von InnoDB: wenige Ebenen, verkettete Blattebene — dadurch sind Bereichsabfragen und Sortierungen günstig."},
 {c:"Performance", f:"Linksregel", b:"Ein Index über (a,b) hilft bei a und bei a+b, aber nicht bei b allein — der Einstiegspunkt fehlt."},
@@ -3460,7 +3595,169 @@ const CARDS = [
 {c:"Anwendung", f:"PDO-DSN", b:"mysql:host=…;dbname=…;charset=utf8mb4 — ohne charset kommen Umlaute beschädigt an."},
 {c:"JSON & Suche", f:"->> Operator", b:"Kurzform für JSON_UNQUOTE(JSON_EXTRACT(…)): liefert den entpackten Text aus einem JSON-Dokument."},
 {c:"JSON & Suche", f:"FULLTEXT", b:"Index für Wortsuche, abgefragt mit MATCH(spalte) AGAINST('begriff') — mit Relevanzbewertung."},
+{c:"JSON & Suche", f:"SRID 4326 — Achsenfolge", b:"Erst Breite, dann Länge: POINT(52.52, 13.41). Umdrehen mit 'axis-order=long-lat'; eindeutig auslesen mit ST_Latitude() und ST_Longitude(). Bei SRID 0 gilt umgekehrt X = Länge."},
 {c:"JSON & Suche", f:"Generierte Spalte", b:"GENERATED ALWAYS AS (ausdruck) STORED|VIRTUAL — der Weg, um JSON-Werte oder Funktionsergebnisse zu indizieren."}
+];
+
+
+/* ---------- Fragen zu den SQL-Sprachfamilien ---------- */
+QUIZ.push(
+{cat:"SQL-Familien",q:"Zu welcher Sprachfamilie gehört TRUNCATE TABLE?",a:["DML","DDL","DCL","TCL"],c:1,e:"TRUNCATE ist DDL: implizites COMMIT, kein WHERE, kein Rollback. DELETE dagegen ist DML."},
+{cat:"SQL-Familien",q:"Welche Anweisungen bilden die TCL?",a:["CREATE, ALTER, DROP","INSERT, UPDATE, DELETE","START TRANSACTION, COMMIT, ROLLBACK, SAVEPOINT","GRANT, REVOKE"],c:2,e:"Transaction Control Language — sie klammert DML-Anweisungen zu einem Arbeitsschritt zusammen."},
+{cat:"SQL-Familien",q:"Warum wird SELECT je nach Quelle unterschiedlich eingeordnet?",a:["Weil es zwei SELECT-Varianten gibt","Weil die Norm es zur data manipulation zählt, es aber als einzige Anweisung nichts verändert","Weil es von der Version abhängt","Weil MySQL vom Standard abweicht"],c:1,e:"Deshalb führen manche Quellen vier Familien (SELECT als DML), andere fünf (SELECT als DQL)."},
+{cat:"SQL-Familien",q:"Welche Anweisungen lösen ein implizites COMMIT aus?",a:["Nur COMMIT","DDL- und DCL-Anweisungen sowie LOCK TABLES","Alle DML-Anweisungen","SELECT"],c:1,e:"CREATE, ALTER, DROP, TRUNCATE, GRANT, REVOKE und LOCK TABLES beenden eine offene Transaktion automatisch."},
+{cat:"SQL-Familien",q:"Ab welcher Version kennt MySQL INTERSECT und EXCEPT?",a:["5.7","8.0.0","8.0.31","9.0"],c:2,e:"Vorher mussten sie über JOIN, IN (SELECT …) oder das Anti-Join-Muster nachgebildet werden. MINUS gibt es in MySQL gar nicht."},
+{cat:"SQL-Familien",q:"Wofür steht die Anweisung TABLE t in MySQL 8.0.19+?",a:["Sie legt eine Tabelle an","Sie entspricht SELECT * FROM t","Sie sperrt die Tabelle","Sie zeigt die Struktur"],c:1,e:"TABLE und VALUES sind Kurzformen, die überall dort stehen dürfen, wo ein SELECT erlaubt ist."},
+{cat:"SQL-Familien",q:"Wie schützt man in MySQL einen Bezeichner, der ein reserviertes Wort ist?",a:["Mit doppelten Anführungszeichen","Mit Backticks","Mit eckigen Klammern","Mit einfachen Anführungszeichen"],c:1,e:"`order` in Backticks. Doppelte Anführungszeichen bedeuten Bezeichner nur im SQL-Modus ANSI_QUOTES, eckige Klammern gehören zu SQL Server."},
+{cat:"SQL-Familien",q:"Was ist an dem Kommentar --5 Zeilen gelöscht problematisch?",a:["Nichts","Nach -- fehlt das Leerzeichen, dadurch ist es kein Kommentar","Kommentare brauchen #","Kommentare sind nur mit /* */ erlaubt"],c:1,e:"MySQL verlangt nach -- ein Leerzeichen oder Zeilenende, sonst wird es als doppeltes Minus gelesen."},
+{cat:"SQL-Familien",q:"Welche MySQL-Klausel entspricht dem Standard FETCH FIRST 10 ROWS ONLY?",a:["TOP 10","LIMIT 10","ROWNUM <= 10","FIRST 10"],c:1,e:"LIMIT ist die MySQL- und PostgreSQL-Schreibweise, TOP gehört zu SQL Server, ROWNUM zu Oracle."},
+{cat:"SQL-Familien",q:"Sind DDL-Anweisungen in MySQL 8.0 atomar?",a:["Nein, nie","Ja — sie gelangen vollständig oder gar nicht ins Data Dictionary","Nur bei MyISAM","Nur innerhalb einer Transaktion"],c:1,e:"Atomares DDL kam mit 8.0. Rollback-fähig sind die Anweisungen dadurch trotzdem nicht — sie committen implizit."}
+);
+
+SHEET.push(
+{h:"SQL-Sprachfamilien", d:[
+ ["DDL","CREATE · ALTER · DROP · TRUNCATE"],
+ ["DML","INSERT · UPDATE · DELETE · REPLACE"],
+ ["DQL","SELECT · TABLE · VALUES"],
+ ["DCL","GRANT · REVOKE"],
+ ["TCL","START TRANSACTION · COMMIT · ROLLBACK · SAVEPOINT"],
+ ["Verwaltung","SHOW · DESCRIBE · EXPLAIN · USE · SET"],
+ ["Implizites COMMIT","bei DDL, DCL und LOCK TABLES"]
+]},
+{h:"Mengenoperatoren", d:[
+ ["UNION [ALL]","Vereinigung"],
+ ["INTERSECT","Schnittmenge, ab 8.0.31"],
+ ["EXCEPT","Differenz, ab 8.0.31"],
+ ["MINUS","gibt es in MySQL nicht"],
+ ["Ersatz","JOIN, IN (SELECT …), Anti-Join"]
+]}
+);
+
+CARDS.push(
+{c:"SQL-Familien", f:"DDL", b:"Data Definition Language: CREATE, ALTER, DROP, TRUNCATE, RENAME. Löst ein implizites COMMIT aus, ist also nicht zurückrollbar."},
+{c:"SQL-Familien", f:"DML", b:"Data Manipulation Language: INSERT, UPDATE, DELETE, REPLACE, LOAD DATA. Innerhalb einer Transaktion zurückrollbar."},
+{c:"SQL-Familien", f:"DQL", b:"Data Query Language: SELECT sowie TABLE und VALUES (ab 8.0.19). Manche Quellen rechnen SELECT zur DML."},
+{c:"SQL-Familien", f:"DCL", b:"Data Control Language: GRANT und REVOKE — Rechtevergabe. Committet ebenfalls implizit."},
+{c:"SQL-Familien", f:"TCL", b:"Transaction Control Language: START TRANSACTION, COMMIT, ROLLBACK, SAVEPOINT, SET TRANSACTION."},
+{c:"SQL-Familien", f:"INTERSECT / EXCEPT", b:"Schnitt- und Differenzmenge, in MySQL erst ab 8.0.31. Nachbilden mit INNER JOIN bzw. LEFT JOIN … IS NULL. MINUS kennt MySQL nicht."}
+);
+
+/* ---------- Kapitelnummern automatisch vergeben ---------- */
+(function nummerieren(){
+  let n = 0;
+  CHAPTERS.forEach(ch => {
+    if(/^A/.test(ch.num)) return;
+    n++;
+    const nn = String(n).padStart(2, "0");
+    ch.kicker = ch.kicker.replace(/Kapitel\s+\d+/, "Kapitel " + nn);
+    ch.num = nn;
+  });
+})();
+/* =========================================================================
+   ÜBUNGSPOOL — Aufgaben mit automatischer Ergebnisprüfung
+   ========================================================================= */
+const TASKS = [
+/* ---------- Stufe 1: SELECT-Grundlagen ---------- */
+{c:"Grundlagen", l:1, q:"Gib alle Spalten aller Abteilungen aus.", s:"SELECT * FROM abteilung;"},
+{c:"Grundlagen", l:1, q:"Gib nur Vorname und Nachname aller Mitarbeiter aus.", s:"SELECT vorname, nachname FROM mitarbeiter;"},
+{c:"Grundlagen", l:1, q:"Zeige alle Geräte des Herstellers <code>Dell</code>.", s:"SELECT * FROM geraet WHERE hersteller = 'Dell';"},
+{c:"Grundlagen", l:1, q:"Zeige alle Tickets mit dem Status <code>offen</code>.", s:"SELECT * FROM ticket WHERE status = 'offen';"},
+{c:"Grundlagen", l:1, q:"Welche Mitarbeiter verdienen mehr als 4000? Gib <code>nachname</code> und <code>gehalt</code> aus.", s:"SELECT nachname, gehalt FROM mitarbeiter WHERE gehalt > 4000;"},
+{c:"Grundlagen", l:1, q:"Gib alle Abteilungen aus, die <em>nicht</em> in Berlin sind.", s:"SELECT * FROM abteilung WHERE standort <> 'Berlin';"},
+{c:"Grundlagen", l:1, q:"Sortiere alle Mitarbeiter absteigend nach Gehalt. Gib <code>nachname</code> und <code>gehalt</code> aus.", s:"SELECT nachname, gehalt FROM mitarbeiter ORDER BY gehalt DESC;", o:true},
+{c:"Grundlagen", l:1, q:"Zeige die fünf ältesten Geräte (nach <code>anschaffung</code>) mit <code>modell</code> und <code>anschaffung</code>.", s:"SELECT modell, anschaffung FROM geraet ORDER BY anschaffung ASC LIMIT 5;", o:true},
+{c:"Grundlagen", l:1, q:"Welche verschiedenen Hersteller gibt es? Nur die Spalte <code>hersteller</code>.", s:"SELECT DISTINCT hersteller FROM geraet;"},
+{c:"Grundlagen", l:1, q:"Zeige alle Mitarbeiter, deren Nachname mit <code>W</code> beginnt.", s:"SELECT * FROM mitarbeiter WHERE nachname LIKE 'W%';"},
+{c:"Grundlagen", l:1, q:"Finde alle Tickets, deren Titel das Wort <code>Server</code> enthält.", s:"SELECT * FROM ticket WHERE titel LIKE '%Server%';"},
+{c:"Grundlagen", l:1, q:"Zeige alle Geräte mit einem Preis zwischen 500 und 1000 — nutze <code>BETWEEN</code>.", s:"SELECT * FROM geraet WHERE preis BETWEEN 500 AND 1000;"},
+{c:"Grundlagen", l:1, q:"Zeige alle Tickets mit Priorität <code>hoch</code> oder <code>kritisch</code> — nutze <code>IN</code>.", s:"SELECT * FROM ticket WHERE prioritaet IN ('hoch','kritisch');"},
+{c:"Grundlagen", l:1, q:"Welche Tickets betreffen kein Gerät? Prüfe auf fehlenden Wert.", s:"SELECT * FROM ticket WHERE geraet_id IS NULL;"},
+{c:"Grundlagen", l:1, q:"Gib Nachname und Jahresgehalt (Monatsgehalt × 12) als Spalte <code>jahresgehalt</code> aus.", s:"SELECT nachname, gehalt * 12 AS jahresgehalt FROM mitarbeiter;"},
+{c:"Grundlagen", l:1, q:"Zeige die drei teuersten Geräte mit <code>modell</code> und <code>preis</code>.", s:"SELECT modell, preis FROM geraet ORDER BY preis DESC LIMIT 3;", o:true},
+{c:"Grundlagen", l:1, q:"Gib alle Mitarbeiter aus, die seit 2020 oder später im Betrieb sind, sortiert nach Eintrittsdatum. Spalten: <code>nachname</code>, <code>eintritt</code>.", s:"SELECT nachname, eintritt FROM mitarbeiter WHERE eintritt >= '2020-01-01' ORDER BY eintritt;", o:true},
+{c:"Grundlagen", l:1, q:"Welche Mitarbeiter haben keine Abteilung zugeordnet?", s:"SELECT * FROM mitarbeiter WHERE abteilung_id IS NULL;"},
+{c:"Grundlagen", l:1, q:"Zeige Titel und Aufwand aller Tickets mit mehr als 150 Minuten Aufwand, absteigend sortiert.", s:"SELECT titel, aufwand_min FROM ticket WHERE aufwand_min > 150 ORDER BY aufwand_min DESC;", o:true},
+{c:"Grundlagen", l:1, q:"Gib alle Geräte aus, die weder Notebook noch Desktop sind. Spalten: <code>typ</code>, <code>modell</code>.", s:"SELECT typ, modell FROM geraet WHERE typ NOT IN ('Notebook','Desktop');"},
+
+/* ---------- Stufe 2: Funktionen und CASE ---------- */
+{c:"Funktionen", l:2, q:"Gib den vollständigen Namen aller Mitarbeiter als Spalte <code>name</code> im Format „Vorname Nachname“ aus.", s:"SELECT CONCAT(vorname, ' ', nachname) AS name FROM mitarbeiter;"},
+{c:"Funktionen", l:2, q:"Gib alle Nachnamen in Großbuchstaben als Spalte <code>nachname</code> aus.", s:"SELECT UPPER(nachname) AS nachname FROM mitarbeiter;"},
+{c:"Funktionen", l:2, q:"Zeige <code>modell</code> und den auf ganze Euro aufgerundeten Preis als <code>preis_gerundet</code>.", s:"SELECT modell, CEIL(preis) AS preis_gerundet FROM geraet;"},
+{c:"Funktionen", l:2, q:"Gib <code>nachname</code> und das Eintrittsjahr als Spalte <code>jahr</code> aus.", s:"SELECT nachname, YEAR(eintritt) AS jahr FROM mitarbeiter;"},
+{c:"Funktionen", l:2, q:"Zeige <code>nachname</code> und das Eintrittsdatum im deutschen Format (TT.MM.JJJJ) als Spalte <code>eintritt_de</code>.", s:"SELECT nachname, DATE_FORMAT(eintritt, '%d.%m.%Y') AS eintritt_de FROM mitarbeiter;", h:"DATE_FORMAT mit '%d.%m.%Y'."},
+{c:"Funktionen", l:2, q:"Gib <code>titel</code> aller Tickets aus sowie den Aufwand in Stunden, auf eine Nachkommastelle gerundet, als <code>stunden</code>.", s:"SELECT titel, ROUND(aufwand_min / 60, 1) AS stunden FROM ticket;"},
+{c:"Funktionen", l:2, q:"Gib <code>id</code> und <code>mitarbeiter_id</code> aller Geräte aus; steht dort NULL, soll <code>0</code> erscheinen (Spalte <code>mitarbeiter_id</code>).", s:"SELECT id, IFNULL(mitarbeiter_id, 0) AS mitarbeiter_id FROM geraet;"},
+{c:"Funktionen", l:2, q:"Gib <code>nachname</code> und die Länge des Nachnamens in Zeichen als <code>laenge</code> aus.", s:"SELECT nachname, CHAR_LENGTH(nachname) AS laenge FROM mitarbeiter;"},
+{c:"Funktionen", l:2, q:"Gib <code>nachname</code>, <code>gehalt</code> und eine Spalte <code>stufe</code> aus: über 5000 „Führung“, über 3500 „Fachkraft“, sonst „Einstieg“.", s:"SELECT nachname, gehalt, CASE WHEN gehalt > 5000 THEN 'Führung' WHEN gehalt > 3500 THEN 'Fachkraft' ELSE 'Einstieg' END AS stufe FROM mitarbeiter;"},
+{c:"Funktionen", l:2, q:"Gib <code>titel</code> und eine Spalte <code>dringend</code> aus, die bei Priorität „kritisch“ den Wert 1 und sonst 0 enthält.", s:"SELECT titel, CASE WHEN prioritaet = 'kritisch' THEN 1 ELSE 0 END AS dringend FROM ticket;"},
+{c:"Funktionen", l:2, q:"Zeige alle Tickets aus dem Jahr 2025 im ersten Halbjahr — indexfreundlich ohne Funktion auf der Spalte. Spalten: <code>titel</code>, <code>erstellt</code>.", s:"SELECT titel, erstellt FROM ticket WHERE erstellt >= '2025-01-01' AND erstellt < '2025-07-01';", h:"Bereichsvergleich statt YEAR() oder MONTH()."},
+{c:"Funktionen", l:2, q:"Gib je Gerät <code>modell</code>, <code>preis</code> und den Bruttopreis mit 19 % als <code>brutto</code> aus, auf zwei Stellen gerundet.", s:"SELECT modell, preis, ROUND(preis * 1.19, 2) AS brutto FROM geraet;"},
+
+/* ---------- Stufe 2: Aggregation ---------- */
+{c:"Aggregation", l:2, q:"Wie viele Mitarbeiter gibt es? Spalte <code>anzahl</code>.", s:"SELECT COUNT(*) AS anzahl FROM mitarbeiter;"},
+{c:"Aggregation", l:2, q:"Wie hoch ist die Gehaltssumme aller Mitarbeiter? Spalte <code>summe</code>.", s:"SELECT SUM(gehalt) AS summe FROM mitarbeiter;"},
+{c:"Aggregation", l:2, q:"Wie teuer ist das teuerste Gerät? Spalte <code>maximum</code>.", s:"SELECT MAX(preis) AS maximum FROM geraet;"},
+{c:"Aggregation", l:2, q:"Wie viele Geräte gibt es je Typ? Spalten <code>typ</code> und <code>anzahl</code>.", s:"SELECT typ, COUNT(*) AS anzahl FROM geraet GROUP BY typ;"},
+{c:"Aggregation", l:2, q:"Ermittle je Status die Anzahl der Tickets (<code>anzahl</code>) und den Gesamtaufwand (<code>minuten</code>).", s:"SELECT status, COUNT(*) AS anzahl, SUM(aufwand_min) AS minuten FROM ticket GROUP BY status;"},
+{c:"Aggregation", l:2, q:"Berechne je Abteilungs-ID das Durchschnittsgehalt auf zwei Stellen gerundet als <code>schnitt</code>.", s:"SELECT abteilung_id, ROUND(AVG(gehalt), 2) AS schnitt FROM mitarbeiter GROUP BY abteilung_id;"},
+{c:"Aggregation", l:2, q:"Welche Hersteller haben mehr als zwei Geräte? Spalten <code>hersteller</code> und <code>anzahl</code>.", s:"SELECT hersteller, COUNT(*) AS anzahl FROM geraet GROUP BY hersteller HAVING COUNT(*) > 2;", h:"Auf ein Aggregat filtert HAVING, nicht WHERE."},
+{c:"Aggregation", l:2, q:"Wie viele verschiedene Abteilungen sind in <code>mitarbeiter</code> überhaupt belegt? Spalte <code>anzahl</code>.", s:"SELECT COUNT(DISTINCT abteilung_id) AS anzahl FROM mitarbeiter;"},
+{c:"Aggregation", l:2, q:"Ermittle je Priorität die Anzahl der Tickets und den durchschnittlichen Aufwand (ganzzahlig gerundet als <code>schnitt</code>), absteigend nach Anzahl sortiert.", s:"SELECT prioritaet, COUNT(*) AS anzahl, ROUND(AVG(aufwand_min)) AS schnitt FROM ticket GROUP BY prioritaet ORDER BY anzahl DESC;", o:true},
+{c:"Aggregation", l:2, q:"Ermittle je Standort die Anzahl der Abteilungen (<code>anzahl</code>) und die Budgetsumme (<code>budget</code>).", s:"SELECT standort, COUNT(*) AS anzahl, SUM(budget) AS budget FROM abteilung GROUP BY standort;"},
+{c:"Aggregation", l:2, q:"Ermittle je Gerätetyp den Gesamtwert (<code>wert</code>), aber nur für Typen mit einem Gesamtwert über 2000.", s:"SELECT typ, SUM(preis) AS wert FROM geraet GROUP BY typ HAVING SUM(preis) > 2000;"},
+{c:"Aggregation", l:2, q:"Zähle die Tickets je Mitarbeiter-ID (<code>mitarbeiter_id</code>, <code>anzahl</code>) und zeige nur die mit mindestens drei Tickets.", s:"SELECT mitarbeiter_id, COUNT(*) AS anzahl FROM ticket GROUP BY mitarbeiter_id HAVING COUNT(*) >= 3;"},
+
+/* ---------- Stufe 2/3: JOINs ---------- */
+{c:"JOINs", l:2, q:"Gib Nachname und Abteilungsname aller zugeordneten Mitarbeiter aus. Spalten: <code>nachname</code>, <code>name</code>.", s:"SELECT m.nachname, a.name FROM mitarbeiter m JOIN abteilung a ON m.abteilung_id = a.id;"},
+{c:"JOINs", l:2, q:"Gib zu jedem Gerät den Nachnamen des Besitzers aus — auch Geräte ohne Besitzer sollen erscheinen. Spalten: <code>modell</code>, <code>nachname</code>.", s:"SELECT g.modell, m.nachname FROM geraet g LEFT JOIN mitarbeiter m ON g.mitarbeiter_id = m.id;"},
+{c:"JOINs", l:2, q:"Zeige Titel jedes Tickets mit dem Namen der Abteilung des Melders. Spalten: <code>titel</code>, <code>name</code>.", s:"SELECT t.titel, a.name FROM ticket t JOIN mitarbeiter m ON t.mitarbeiter_id = m.id JOIN abteilung a ON m.abteilung_id = a.id;"},
+{c:"JOINs", l:3, q:"Welche Abteilungen beschäftigen <em>keine</em> Auszubildenden? Gib <code>name</code> aus. Die Bedingung auf die Rolle gehört in die ON-Klausel!", s:"SELECT a.name FROM abteilung a LEFT JOIN mitarbeiter m ON m.abteilung_id = a.id AND m.rolle LIKE 'Auszubildende%' WHERE m.id IS NULL;", h:"Steht die Rollenbedingung im WHERE, wird aus dem LEFT JOIN ein INNER JOIN und das Ergebnis leer."},
+{c:"JOINs", l:2, q:"Welche Geräte liegen im Lager? Nutze einen LEFT JOIN auf <code>mitarbeiter</code> und gib <code>modell</code> aus.", s:"SELECT g.modell FROM geraet g LEFT JOIN mitarbeiter m ON g.mitarbeiter_id = m.id WHERE m.id IS NULL;"},
+{c:"JOINs", l:3, q:"Zähle je Abteilung die Mitarbeiter — auch leere Abteilungen mit 0. Spalten: <code>name</code>, <code>anzahl</code>.", s:"SELECT a.name, COUNT(m.id) AS anzahl FROM abteilung a LEFT JOIN mitarbeiter m ON m.abteilung_id = a.id GROUP BY a.id, a.name;"},
+{c:"JOINs", l:3, q:"Ermittle je Mitarbeiter die Anzahl seiner Geräte. Nur Mitarbeiter mit mindestens einem Gerät. Spalten: <code>nachname</code>, <code>anzahl</code>.", s:"SELECT m.nachname, COUNT(g.id) AS anzahl FROM mitarbeiter m JOIN geraet g ON g.mitarbeiter_id = m.id GROUP BY m.id, m.nachname;"},
+{c:"JOINs", l:3, q:"Gib Titel, Priorität und das Modell des betroffenen Geräts aus. Tickets ohne Gerät sollen „kein Gerät“ anzeigen (Spalte <code>modell</code>).", s:"SELECT t.titel, t.prioritaet, IFNULL(g.modell, 'kein Gerät') AS modell FROM ticket t LEFT JOIN geraet g ON t.geraet_id = g.id;"},
+{c:"JOINs", l:3, q:"Ermittle je Abteilung den Gesamtwert der Geräte ihrer Mitarbeiter. Spalten: <code>name</code>, <code>wert</code>. Nur Abteilungen mit Geräten.", s:"SELECT a.name, SUM(g.preis) AS wert FROM abteilung a JOIN mitarbeiter m ON m.abteilung_id = a.id JOIN geraet g ON g.mitarbeiter_id = m.id GROUP BY a.id, a.name;"},
+{c:"JOINs", l:3, q:"Welche Mitarbeiter haben noch nie ein Ticket gemeldet? Gib <code>vorname</code> und <code>nachname</code> aus.", s:"SELECT m.vorname, m.nachname FROM mitarbeiter m LEFT JOIN ticket t ON t.mitarbeiter_id = m.id WHERE t.id IS NULL;"},
+{c:"JOINs", l:3, q:"Ermittle je Standort die Anzahl der Mitarbeiter. Spalten: <code>standort</code>, <code>anzahl</code>.", s:"SELECT a.standort, COUNT(m.id) AS anzahl FROM abteilung a JOIN mitarbeiter m ON m.abteilung_id = a.id GROUP BY a.standort;"},
+{c:"JOINs", l:3, q:"Zeige alle Paare von Mitarbeitern derselben Abteilung (SELF JOIN), jedes Paar nur einmal. Spalten: <code>a</code> und <code>b</code> mit den Nachnamen.", s:"SELECT x.nachname AS a, y.nachname AS b FROM mitarbeiter x JOIN mitarbeiter y ON x.abteilung_id = y.abteilung_id AND x.id < y.id;", h:"Zwei Aliase und die Bedingung x.id < y.id."},
+
+/* ---------- Stufe 3: Unterabfragen, CTEs, Fenster ---------- */
+{c:"Unterabfragen", l:3, q:"Welche Mitarbeiter verdienen mehr als der Durchschnitt aller Mitarbeiter? Spalten: <code>nachname</code>, <code>gehalt</code>.", s:"SELECT nachname, gehalt FROM mitarbeiter WHERE gehalt > (SELECT AVG(gehalt) FROM mitarbeiter);"},
+{c:"Unterabfragen", l:3, q:"Welches Gerät ist das teuerste? Gib <code>modell</code> und <code>preis</code> über eine Unterabfrage aus (kein LIMIT).", s:"SELECT modell, preis FROM geraet WHERE preis = (SELECT MAX(preis) FROM geraet);"},
+{c:"Unterabfragen", l:3, q:"Welche Abteilungen beschäftigen mindestens einen Mitarbeiter mit mehr als 4500 Gehalt? Gib <code>name</code> aus, nutze IN oder EXISTS.", s:"SELECT name FROM abteilung WHERE id IN (SELECT abteilung_id FROM mitarbeiter WHERE gehalt > 4500);"},
+{c:"Unterabfragen", l:3, q:"Welche Mitarbeiter verdienen mehr als der Durchschnitt <em>ihrer eigenen</em> Abteilung? Spalten: <code>nachname</code>, <code>abteilung_id</code>, <code>gehalt</code>.", s:"SELECT nachname, abteilung_id, gehalt FROM mitarbeiter m WHERE gehalt > (SELECT AVG(m2.gehalt) FROM mitarbeiter m2 WHERE m2.abteilung_id = m.abteilung_id);", h:"Korrelierte Unterabfrage — die innere Abfrage nutzt m.abteilung_id."},
+{c:"Unterabfragen", l:3, q:"Welche Geräte kosten mehr als jedes Notebook? Gib <code>modell</code> und <code>preis</code> aus.", s:"SELECT modell, preis FROM geraet WHERE preis > (SELECT MAX(preis) FROM geraet WHERE typ = 'Notebook');"},
+{c:"Unterabfragen", l:3, q:"Nutze eine CTE: Ermittle je Mitarbeiter-ID die Ticketanzahl und gib nur die mit mehr als zwei Tickets aus. Spalten: <code>mitarbeiter_id</code>, <code>anzahl</code>.", s:"WITH t AS (SELECT mitarbeiter_id, COUNT(*) AS anzahl FROM ticket GROUP BY mitarbeiter_id) SELECT mitarbeiter_id, anzahl FROM t WHERE anzahl > 2;"},
+{c:"Unterabfragen", l:3, q:"Nutze eine abgeleitete Tabelle: Gib alle Abteilungs-IDs mit einem Durchschnittsgehalt über 4000 aus. Spalten: <code>abteilung_id</code>, <code>schnitt</code>.", s:"SELECT d.abteilung_id, d.schnitt FROM (SELECT abteilung_id, AVG(gehalt) AS schnitt FROM mitarbeiter GROUP BY abteilung_id) AS d WHERE d.schnitt > 4000;"},
+{c:"Unterabfragen", l:3, q:"Welche Mitarbeiter haben mindestens ein offenes Ticket? Gib <code>nachname</code> aus, nutze EXISTS.", s:"SELECT nachname FROM mitarbeiter m WHERE EXISTS (SELECT 1 FROM ticket t WHERE t.mitarbeiter_id = m.id AND t.status = 'offen');"},
+{c:"Fenster", l:3, q:"Nummeriere alle Mitarbeiter nach Gehalt absteigend durch. Spalten: <code>nachname</code>, <code>gehalt</code>, <code>nr</code>.", s:"SELECT nachname, gehalt, ROW_NUMBER() OVER (ORDER BY gehalt DESC) AS nr FROM mitarbeiter;"},
+{c:"Fenster", l:3, q:"Vergib je Abteilung einen Gehaltsrang. Spalten: <code>nachname</code>, <code>abteilung_id</code>, <code>rang</code>.", s:"SELECT nachname, abteilung_id, RANK() OVER (PARTITION BY abteilung_id ORDER BY gehalt DESC) AS rang FROM mitarbeiter;"},
+{c:"Fenster", l:3, q:"Zeige zu jedem Mitarbeiter das Durchschnittsgehalt seiner Abteilung, auf zwei Stellen gerundet. Spalten: <code>nachname</code>, <code>gehalt</code>, <code>abt_schnitt</code>.", s:"SELECT nachname, gehalt, ROUND(AVG(gehalt) OVER (PARTITION BY abteilung_id), 2) AS abt_schnitt FROM mitarbeiter;"},
+{c:"Fenster", l:3, q:"Berechne die laufende Summe der Gerätepreise nach Anschaffungsdatum. Spalten: <code>modell</code>, <code>preis</code>, <code>laufend</code>.", s:"SELECT modell, preis, SUM(preis) OVER (ORDER BY anschaffung) AS laufend FROM geraet;"},
+{c:"Fenster", l:3, q:"Gib je Mitarbeiter den Nachnamen des im Gehalt nächstniedrigeren Kollegen aus. Spalten: <code>nachname</code>, <code>gehalt</code>, <code>darunter</code>.", s:"SELECT nachname, gehalt, LAG(nachname) OVER (ORDER BY gehalt) AS darunter FROM mitarbeiter;"},
+{c:"Fenster", l:3, q:"Ermittle je Gerätetyp das teuerste Gerät über eine Fensterfunktion in einer Unterabfrage. Spalten: <code>typ</code>, <code>modell</code>, <code>preis</code>.", s:"SELECT typ, modell, preis FROM (SELECT typ, modell, preis, RANK() OVER (PARTITION BY typ ORDER BY preis DESC) AS r FROM geraet) x WHERE r = 1;", h:"Fensterfunktionen lassen sich nicht mit WHERE filtern — erst in einer Ebene darüber."},
+
+/* ---------- Stufe 3: Auswertungen im Prüfungsstil ---------- */
+{c:"Auswertung", l:3, q:"Erstelle eine Monatsauswertung der Tickets: Spalte <code>monat</code> im Format JJJJ-MM und <code>anzahl</code>, aufsteigend sortiert.", s:"SELECT DATE_FORMAT(erstellt, '%Y-%m') AS monat, COUNT(*) AS anzahl FROM ticket GROUP BY DATE_FORMAT(erstellt, '%Y-%m') ORDER BY monat;", o:true},
+{c:"Auswertung", l:3, q:"Baue eine Kreuztabelle: je Priorität die Gesamtzahl (<code>gesamt</code>) sowie die Anzahl offener Tickets (<code>offen</code>) über SUM und CASE.", s:"SELECT prioritaet, COUNT(*) AS gesamt, SUM(CASE WHEN status = 'offen' THEN 1 ELSE 0 END) AS offen FROM ticket GROUP BY prioritaet;"},
+{c:"Auswertung", l:3, q:"Ermittle je Gerätetyp den Anteil am Gesamtinventarwert in Prozent, auf eine Stelle gerundet. Spalten: <code>typ</code>, <code>prozent</code>.", s:"SELECT typ, ROUND(SUM(preis) * 100 / (SELECT SUM(preis) FROM geraet), 1) AS prozent FROM geraet GROUP BY typ;"},
+{c:"Auswertung", l:3, q:"Gib die drei Mitarbeiter mit dem höchsten Gesamtaufwand über alle Tickets aus. Spalten: <code>nachname</code>, <code>minuten</code>.", s:"SELECT m.nachname, SUM(t.aufwand_min) AS minuten FROM mitarbeiter m JOIN ticket t ON t.mitarbeiter_id = m.id GROUP BY m.id, m.nachname ORDER BY minuten DESC LIMIT 3;", o:true},
+{c:"Auswertung", l:3, q:"Ermittle je Abteilung Anzahl Mitarbeiter (<code>mitarbeiter</code>) und Anzahl Tickets (<code>tickets</code>) — achte auf die Vervielfachung durch mehrere Joins.", s:"SELECT a.name, COUNT(DISTINCT m.id) AS mitarbeiter, COUNT(DISTINCT t.id) AS tickets FROM abteilung a LEFT JOIN mitarbeiter m ON m.abteilung_id = a.id LEFT JOIN ticket t ON t.mitarbeiter_id = m.id GROUP BY a.id, a.name;", h:"COUNT(DISTINCT …) verhindert doppeltes Zählen."},
+{c:"Auswertung", l:3, q:"Finde doppelte Gerätemodelle: Spalten <code>hersteller</code>, <code>modell</code>, <code>anzahl</code> — nur Kombinationen, die mehr als einmal vorkommen.", s:"SELECT hersteller, modell, COUNT(*) AS anzahl FROM geraet GROUP BY hersteller, modell HAVING COUNT(*) > 1;"},
+{c:"Auswertung", l:3, q:"Ermittle je Status den Anteil an allen Tickets in Prozent, auf eine Stelle gerundet. Spalten: <code>status</code>, <code>prozent</code>.", s:"SELECT status, ROUND(COUNT(*) * 100 / (SELECT COUNT(*) FROM ticket), 1) AS prozent FROM ticket GROUP BY status;"},
+{c:"Auswertung", l:3, q:"Erstelle eine Inventarliste je Hersteller: <code>hersteller</code>, Stückzahl (<code>stueck</code>), Gesamtwert (<code>wert</code>) und Durchschnittspreis auf zwei Stellen (<code>schnitt</code>), absteigend nach Wert.", s:"SELECT hersteller, COUNT(*) AS stueck, SUM(preis) AS wert, ROUND(AVG(preis), 2) AS schnitt FROM geraet GROUP BY hersteller ORDER BY wert DESC;", o:true},
+{c:"Auswertung", l:3, q:"Welche Mitarbeiter haben mehr als ein Gerät <em>und</em> mindestens zwei Tickets? Gib <code>nachname</code> aus.", s:"SELECT m.nachname FROM mitarbeiter m WHERE (SELECT COUNT(*) FROM geraet g WHERE g.mitarbeiter_id = m.id) > 1 AND (SELECT COUNT(*) FROM ticket t WHERE t.mitarbeiter_id = m.id) >= 2;", h:"Zwei korrelierte Unterabfragen in der WHERE-Klausel."},
+
+/* ---------- DDL und DML ---------- */
+{c:"DDL & DML", l:2, q:"Füge eine neue Abteilung ein: id 20, Name „Qualitätssicherung“, Standort „Berlin“, Budget 55000.", s:"INSERT INTO abteilung (id, name, standort, budget) VALUES (20, 'Qualitätssicherung', 'Berlin', 55000);", v:"SELECT * FROM abteilung WHERE id = 20;"},
+{c:"DDL & DML", l:2, q:"Erhöhe das Budget aller Abteilungen in Leipzig um 10 Prozent.", s:"UPDATE abteilung SET budget = budget * 1.1 WHERE standort = 'Leipzig';", v:"SELECT id, ROUND(budget,2) AS budget FROM abteilung ORDER BY id;"},
+{c:"DDL & DML", l:2, q:"Setze den Status aller Tickets mit Priorität „niedrig“ und Status „offen“ auf „bearbeitung“.", s:"UPDATE ticket SET status = 'bearbeitung' WHERE prioritaet = 'niedrig' AND status = 'offen';", v:"SELECT id, status FROM ticket ORDER BY id;"},
+{c:"DDL & DML", l:2, q:"Lösche alle Tickets mit einem Aufwand unter 25 Minuten.", s:"DELETE FROM ticket WHERE aufwand_min < 25;", v:"SELECT COUNT(*) AS n FROM ticket;"},
+{c:"DDL & DML", l:2, q:"Ordne das Gerät mit der id 10 dem Mitarbeiter mit der id 2 zu.", s:"UPDATE geraet SET mitarbeiter_id = 2 WHERE id = 10;", v:"SELECT id, mitarbeiter_id FROM geraet WHERE id = 10;"},
+{c:"DDL & DML", l:3, q:"Lege eine Tabelle <code>schulung</code> an mit <code>id</code> (INT, Primärschlüssel), <code>titel</code> (VARCHAR(60), NOT NULL) und <code>dauer_h</code> (INT).", s:"CREATE TABLE schulung (id INT PRIMARY KEY, titel VARCHAR(60) NOT NULL, dauer_h INT);", d:true},
+{c:"DDL & DML", l:3, q:"Lege eine Tabelle <code>standort</code> an mit <code>id</code> (INT, Primärschlüssel), <code>ort</code> (VARCHAR(40), NOT NULL) und <code>plz</code> (CHAR(5)).", s:"CREATE TABLE standort (id INT PRIMARY KEY, ort VARCHAR(40) NOT NULL, plz CHAR(5));", d:true},
+{c:"DDL & DML", l:2, q:"Zeige den Aufbau der Tabelle <code>abteilung</code> mit einer Verwaltungsanweisung.", s:"DESCRIBE abteilung;", f:true},
+{c:"DDL & DML", l:2, q:"Liste alle Tabellen der Datenbank auf.", s:"SHOW TABLES;", f:true}
 ];
 /* =========================================================================
    10) SYNTAX-HERVORHEBUNG
@@ -3507,7 +3804,7 @@ function rowsInfo(res){
    11) FORTSCHRITT
    ========================================================================= */
 const KEY = "mysql_lernpfad_v1";
-let STATE = {done:[], tasks:{}, quiz:{best:0, seen:0}, cards:{}, exam:{best:0, laeufe:0}};
+let STATE = {done:[], tasks:{}, quiz:{best:0, seen:0}, cards:{}, exam:{best:0, laeufe:0}, trainer:{}};
 try{ const raw = localStorage.getItem(KEY); if(raw) STATE = Object.assign(STATE, JSON.parse(raw)); }catch(e){}
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(STATE)); }catch(e){} }
 function markDone(id){ if(!STATE.done.includes(id)){ STATE.done.push(id); save(); paintNav(); paintProgress(); } }
@@ -3546,6 +3843,7 @@ function buildIndex(){
     }));
   });
   QUIZ.forEach(q => idx.push({t:"Quizfrage · " + q.cat, h:q.q, x:stripTags(q.e), go:"quiz"}));
+  TASKS.forEach(t => idx.push({t:"Übungsaufgabe · " + t.c, h:stripTags(t.q), x:t.s, go:"trainer", code:true}));
   CARDS.forEach(c => idx.push({t:"Karteikarte · " + c.c, h:c.f, x:stripTags(c.b), go:"karteikarten"}));
   SHEET.forEach(sc => idx.push({t:"Spickzettel", h:sc.h, x:sc.d.map(d => d[0] + " — " + stripTags(d[1])).join(" · "), go:"spickzettel"}));
   SOURCES.forEach(q => idx.push({t:"Quelle", h:q.t, x:q.d, go:"quellen"}));
@@ -3589,6 +3887,7 @@ function mark(text, q){
 const EXTRA = [
   {id:"datenmodell", label:"Datenmodell", icon:"◫"},
   {id:"playground", label:"SQL-Konsole", icon:"›_"},
+  {id:"trainer", label:"Aufgabentrainer", icon:"✎"},
   {id:"quiz", label:"Prüfungsquiz", icon:"?"},
   {id:"karteikarten", label:"Karteikarten", icon:"▤"},
   {id:"suche", label:"Suche", icon:"⌕"},
@@ -3769,6 +4068,71 @@ function remember(chId, i, ok){
   const ch = CHAPTERS.find(c => c.id === chId);
   if(ch.tasks.every((t, k) => STATE.tasks[chId + "_" + k])) markDone(chId);
 }
+/* --- Prüfung im Aufgabentrainer --- */
+function checkTrainer(i){
+  const t = TASKS[i];
+  const ta = document.getElementById("trTa");
+  const out = document.getElementById("trVerdict");
+  const user = (ta.value || "").trim();
+  if(!user){ out.className = "verdict no"; out.innerHTML = "Bitte gib zuerst eine SQL-Anweisung ein."; return; }
+  const snap = snapshot();
+  let userRes;
+  try{ userRes = runSQL(user); }
+  catch(e){
+    restore(snap);
+    out.className = "verdict no";
+    out.innerHTML = "<strong>Fehler beim Ausführen:</strong><br><span style='font-family:var(--mono);font-size:13px'>" + esc(e.message) + "</span>";
+    return;
+  }
+  let ok = false, msg = "";
+  if(t.f){
+    ok = true;
+    msg = "<strong>Läuft ✓</strong> " + (userRes.type === "result" ? rowsInfo(userRes) + "." : userRes.msg);
+    restore(snap);
+  } else if(t.d){
+    ok = userRes.type === "info" && /angelegt/.test(userRes.msg || "");
+    restore(snap);
+    msg = ok ? "<strong>Richtig ✓</strong> Die Tabelle wurde angelegt."
+             : "<strong>Noch nicht ✗</strong> Erwartet wird eine gültige CREATE-TABLE-Anweisung.";
+  } else {
+    let erwartet, tatsaechlich;
+    try{
+      if(t.v){
+        restore(snap); runSQL(t.s); erwartet = runSQL(t.v);
+        restore(snap); runSQL(user);  tatsaechlich = runSQL(t.v);
+      } else {
+        restore(snap); erwartet = runSQL(t.s);
+        restore(snap); tatsaechlich = runSQL(user);
+      }
+    }catch(e){
+      restore(snap);
+      out.className = "verdict no";
+      out.innerHTML = "<strong>Fehler:</strong> " + esc(e.message);
+      return;
+    }
+    ok = (erwartet.type === "result" && tatsaechlich.type === "result")
+       ? sameResult(erwartet, tatsaechlich, t.o)
+       : erwartet.type === tatsaechlich.type;
+    restore(snap);
+    if(ok){
+      msg = "<strong>Richtig ✓</strong> " + (tatsaechlich.type === "result" ? rowsInfo(tatsaechlich) + "." : tatsaechlich.msg);
+    } else {
+      msg = "<strong>Noch nicht ✗</strong> ";
+      if(erwartet.type === "result" && tatsaechlich.type === "result")
+        msg += "Erwartet werden " + erwartet.rows.length + " Zeile(n) mit " + erwartet.cols.length +
+               " Spalte(n), deine Abfrage liefert " + tatsaechlich.rows.length + " Zeile(n) mit " + tatsaechlich.cols.length + " Spalte(n).";
+      if(t.o) msg += " Achte auch auf die Sortierung.";
+      if(t.h) msg += "<br><em>Tipp: " + t.h + "</em>";
+    }
+  }
+  if(ok){ STATE.trainer[i] = true; save(); }
+  out.className = ok ? "verdict ok" : "verdict no";
+  out.innerHTML = msg;
+  const p = document.getElementById("trProg");
+  if(p) p.textContent = trainerSolved() + " von " + TASKS.length + " gelöst";
+}
+function trainerSolved(){ return TASKS.filter((t, i) => STATE.trainer[i]).length; }
+
 function showTheory(chId, i){
   const ch = CHAPTERS.find(c => c.id === chId);
   const out = document.getElementById("vd_" + chId + "_" + i);
@@ -3825,6 +4189,7 @@ function viewStart(){
     '<div class="card"><span class="big">' + CHAPTERS.length + '</span><h4>Kapitel</h4><p>Grundlagen, DDL, DML, SELECT, JOINs, Normalisierung, Indizes, Transaktionen, Rechte, Betrieb — plus drei Anhänge zu Werkzeugen, Programmierung und Praxisrezepten.</p></div>' +
     '<div class="card"><span class="big">' + QUIZ.length + '</span><h4>Prüfungsfragen</h4><p>Nach Themen filterbar, mit Erklärung zu jeder Antwort — ausgelegt auf die IHK-Abschlussprüfung.</p></div>' +
     '<div class="card" style="cursor:pointer" onclick="go(\'datenmodell\')"><span class="big">4</span><h4>Übungstabellen</h4><p>Ein kleiner IT-Betrieb: Abteilungen, Mitarbeiter, Geräte und Tickets. Zum ER-Diagramm →</p></div>' +
+    '<div class="card" style="cursor:pointer" onclick="go(\'trainer\')"><span class="big">' + TASKS.length + '</span><h4>Übungsaufgaben</h4><p>Eigener Trainer mit drei Schwierigkeitsstufen und automatischer Ergebnisprüfung.</p></div>' +
     '<div class="card" style="cursor:pointer" onclick="go(\'karteikarten\')"><span class="big">' + CARDS.length + '</span><h4>Karteikarten</h4><p>Begriffe nach dem Leitner-Prinzip wiederholen — ideal für die letzten Tage vor der Prüfung.</p></div>' +
     '<div class="card"><span class="big">' + STATE.done.length + '/' + CHAPTERS.length + '</span><h4>Dein Fortschritt</h4><p>' + (runde ? "Bestes Quizergebnis: " + runde + " %." : "Noch kein Quiz absolviert.") + ' Alles bleibt lokal auf deinem Gerät.</p></div>' +
     '</div>' +
@@ -3969,7 +4334,7 @@ function paintQuiz(){
       '<p style="color:var(--muted)">' + (pct >= 80 ? "Sitzt. Das ist Prüfungsniveau." : pct >= 60 ? "Solide Basis — die Fehlerthemen lohnen eine Wiederholung." : "Noch wacklig. Geh die zugehörigen Kapitel noch einmal durch.") + "</p>" +
       (QZ.wrong.length ? '<div class="expl on" style="margin-top:14px"><strong>Falsch beantwortet:</strong><br>' + QZ.wrong.map(w => "• " + esc(w)).join("<br>") + "</div>" : "") +
       '<div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn primary" onclick="quizStart(' + JSON.stringify(QZ.cat).replace(/"/g, "&quot;") + ')">Neue Runde</button>' +
-      '<button class="btn" onclick="go(\'spickzettel\')">Zum Spickzettel</button></div></div>';
+      '<button class="btn" onclick="go(\'trainer\')">Zum Aufgabentrainer</button></div></div>';
     return;
   }
   const q = QZ.list[QZ.i];
@@ -4031,12 +4396,90 @@ function viewSchema(){
     "<li><strong>geraet 1:n ticket</strong> — ein Ticket kann sich auf ein Gerät beziehen, muss aber nicht.</li>" +
     "</ul></div>" +
     '<div class="chapfoot"><button class="btn primary" onclick="go(\'playground\')">In der Konsole ausprobieren</button>' +
-    '<button class="btn" onclick="go(\'normalisierung\')">Kapitel 11: Normalisierung</button></div></div>';
+    '<button class="btn" onclick="go(\'normalisierung\')">Zum Kapitel Normalisierung</button></div></div>';
   return h;
 }
 function schemaPeek(t){
   PENDING_SQL = "SELECT * FROM " + t + ";";
   go("playground");
+}
+
+/* ---------- Aufgabentrainer ---------- */
+let TR = {liste:[], i:0, cat:"Alle", lvl:0};
+function viewTrainer(){
+  const cats = ["Alle"].concat([...new Set(TASKS.map(t => t.c))]);
+  const gel = trainerSolved();
+  let h = '<div class="wrap"><section class="chaphead"><div class="kicker">Werkzeug · Üben</div><h2>Aufgabentrainer</h2>' +
+    "<p>" + TASKS.length + ' Übungsaufgaben auf der Datenbank <code>it_betrieb</code>, von der einfachen Auswahl bis zur mehrstufigen Auswertung. Geprüft wird das <strong>Ergebnis</strong>, nicht die Formulierung — es gibt also mehrere richtige Wege.</p></section>';
+  h += '<div class="qbar"><i style="width:' + (gel / TASKS.length * 100) + '%"></i></div>' +
+    '<p style="font-family:var(--mono);font-size:12.5px;color:var(--muted);margin:0 0 16px" id="trProg">' + gel + " von " + TASKS.length + " gelöst</p>";
+  h += '<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px">' +
+    cats.map(c => '<button class="schemachip' + (TR.cat === c ? " on" : "") + '" style="padding:8px 13px" onclick="trainerStart(' +
+      JSON.stringify(c).replace(/"/g, "&quot;") + ', ' + TR.lvl + ')">' + esc(c) + " (" + (c === "Alle" ? TASKS.length : TASKS.filter(x => x.c === c).length) + ")</button>").join("") + "</div>";
+  h += '<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:20px">' +
+    [[0,"Alle Stufen"],[1,"Stufe 1 — Grundlagen"],[2,"Stufe 2 — Aufbau"],[3,"Stufe 3 — Prüfungsniveau"]].map(x =>
+      '<button class="schemachip' + (TR.lvl === x[0] ? " on" : "") + '" style="padding:8px 13px" onclick="trainerStart(' +
+      JSON.stringify(TR.cat).replace(/"/g, "&quot;") + ", " + x[0] + ')">' + x[1] + "</button>").join("") + "</div>";
+  h += '<div id="trBox"></div>' +
+    '<div class="chapfoot"><button class="btn ghost" onclick="trainerReset()">Aufgabenfortschritt zurücksetzen</button>' +
+    '<button class="btn" onclick="go(\'datenmodell\')">Datenmodell nachschlagen</button></div></div>';
+  return h;
+}
+function trainerStart(cat, lvl){
+  TR.cat = cat; TR.lvl = lvl;
+  const idx = TASKS.map((t, i) => i)
+    .filter(i => (cat === "Alle" || TASKS[i].c === cat) && (!lvl || TASKS[i].l === lvl));
+  const offen = idx.filter(i => !STATE.trainer[i]);
+  TR.liste = offen.length ? offen : idx;
+  TR.i = 0;
+  const main = document.getElementById("main");
+  main.innerHTML = viewTrainer();
+  paintTrainer();
+}
+function paintTrainer(){
+  const box = document.getElementById("trBox");
+  if(!box) return;
+  if(!TR.liste.length){ box.innerHTML = '<p style="color:var(--muted)">Keine Aufgaben in dieser Auswahl.</p>'; return; }
+  if(TR.i >= TR.liste.length){
+    box.innerHTML = '<div class="qcard"><div class="qtext">Auswahl durchgearbeitet 🎉</div>' +
+      '<p style="color:var(--muted)">' + trainerSolved() + " von " + TASKS.length + ' Aufgaben insgesamt gelöst.</p>' +
+      '<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn primary" onclick="trainerStart(' +
+      JSON.stringify(TR.cat).replace(/"/g, "&quot;") + ", " + TR.lvl + ')">Von vorn</button>' +
+      '<button class="btn" onclick="go(\'quiz\')">Zum Quiz</button></div></div>';
+    return;
+  }
+  const gi = TR.liste[TR.i];
+  const t = TASKS[gi];
+  const sterne = "●".repeat(t.l) + "○".repeat(3 - t.l);
+  box.innerHTML = '<div class="task" style="padding:18px 20px">' +
+    '<div class="qmeta"><span>' + esc(t.c) + " · Stufe " + t.l + " " + sterne + (STATE.trainer[gi] ? " · bereits gelöst ✓" : "") + "</span>" +
+    "<span>Aufgabe " + (TR.i + 1) + " / " + TR.liste.length + "</span></div>" +
+    '<div class="txt" style="font-size:16.5px;margin-bottom:12px">' + t.q + "</div>" +
+    '<textarea id="trTa" spellcheck="false" autocapitalize="off" autocorrect="off" placeholder="SELECT …" style="min-height:96px"></textarea>' +
+    keyRow("trTa") +
+    '<div class="actions"><button class="mini run" onclick="checkTrainer(' + gi + ')">Prüfen</button>' +
+    '<button class="mini" onclick="trainerSolution(' + gi + ')">Lösung</button>' +
+    (t.h ? '<button class="mini" onclick="trainerHint(' + gi + ')">Tipp</button>' : "") +
+    '<span style="flex:1"></span>' +
+    (TR.i > 0 ? '<button class="mini" onclick="trainerGo(-1)">← zurück</button>' : "") +
+    '<button class="mini" onclick="trainerGo(1)">nächste →</button></div>' +
+    '<div class="verdict" id="trVerdict"></div></div>';
+}
+function trainerGo(d){ TR.i = Math.max(0, TR.i + d); paintTrainer(); }
+function trainerSolution(i){
+  const out = document.getElementById("trVerdict");
+  out.className = "verdict ok";
+  out.innerHTML = "<strong>Musterlösung</strong><pre style='margin:8px 0 0;font-family:var(--mono);font-size:12.5px;white-space:pre-wrap'>" + esc(TASKS[i].s) + "</pre>";
+}
+function trainerHint(i){
+  const out = document.getElementById("trVerdict");
+  out.className = "verdict no";
+  out.innerHTML = "<strong>Tipp</strong><br>" + TASKS[i].h;
+}
+function trainerReset(){
+  STATE.trainer = {};
+  save();
+  trainerStart(TR.cat, TR.lvl);
 }
 
 /* ---------- Prüfungssimulation ---------- */
@@ -4238,7 +4681,7 @@ function stateImport(){
   try{
     const neu = JSON.parse(document.getElementById("stateIn").value);
     if(!neu || typeof neu !== "object") throw new Error("Kein gültiges Objekt");
-    STATE = Object.assign({done:[], tasks:{}, quiz:{best:0, seen:0}, cards:{}, exam:{best:0, laeufe:0}}, neu);
+    STATE = Object.assign({done:[], tasks:{}, quiz:{best:0, seen:0}, cards:{}, exam:{best:0, laeufe:0}, trainer:{}}, neu);
     save();
     box.innerHTML = '<p style="color:var(--green);font-size:14.5px">Lernstand übernommen.</p>';
     paintNav(); paintProgress();
@@ -4253,7 +4696,7 @@ function stateReset(){
     '<button class="btn primary" onclick="stateResetGo()">Ja, zurücksetzen</button></div>';
 }
 function stateResetGo(){
-  STATE = {done:[], tasks:{}, quiz:{best:0, seen:0}, cards:{}, exam:{best:0, laeufe:0}};
+  STATE = {done:[], tasks:{}, quiz:{best:0, seen:0}, cards:{}, exam:{best:0, laeufe:0}, trainer:{}};
   save();
   go("start");
 }
@@ -4285,6 +4728,7 @@ function go(id){
   if(ch) main.innerHTML = viewChapter(ch);
   else if(id === "datenmodell") main.innerHTML = viewSchema();
   else if(id === "playground") main.innerHTML = viewPlayground();
+  else if(id === "trainer"){ main.innerHTML = viewTrainer(); trainerStart(TR.cat, TR.lvl); }
   else if(id === "quiz") main.innerHTML = viewQuiz();
   else if(id === "karteikarten") main.innerHTML = viewCards();
   else if(id === "suche"){ main.innerHTML = viewSearch(); setTimeout(() => { const el = document.getElementById("sq"); if(el){ el.focus(); if(LAST_QUERY) runSearch(); } }, 30); }
