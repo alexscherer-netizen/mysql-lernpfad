@@ -283,6 +283,21 @@ mark{background:rgba(245,165,36,.28);color:#ffe6b8;border-radius:3px;padding:0 2
 .sheetcard dt:first-child{margin-top:0}
 .sheetcard dd{margin:1px 0 0;color:var(--muted)}
 
+/* ---------- Abkürzungsverzeichnis ---------- */
+.abklist{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--ink-2)}
+.abk{padding:13px 16px;border-bottom:1px solid var(--line-soft)}
+.abk:last-child{border-bottom:0}
+.abkhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin-bottom:4px}
+.abk .kurz{font-family:var(--mono);font-size:14.5px;font-weight:700;color:var(--amber);min-width:92px}
+.abk .lang{font-family:var(--body);font-size:15px;color:#fff;font-weight:600}
+.abk p{margin:0;font-size:14.5px;color:var(--muted);line-height:1.55}
+@media (max-width:700px){
+  .abk{padding:12px 14px}
+  .abk .kurz{min-width:auto}
+  .abk .lang{font-size:14.5px}
+  .abk p{font-size:14px}
+}
+
 /* ---------- Quellen ---------- */
 .src{border-bottom:1px solid var(--line-soft);padding:14px 0}
 .src:last-child{border-bottom:0}
@@ -2263,7 +2278,7 @@ lead:"Bevor die erste Abfrage läuft, lohnt sich der Blick auf die Architektur: 
 body:[
  {h3:"Relationale Datenbank in einem Satz"},
  {p:"Eine relationale Datenbank speichert Daten in <strong>Tabellen</strong> aus Zeilen (Datensätzen) und Spalten (Attributen). Beziehungen zwischen Tabellen entstehen nicht durch Verschachtelung, sondern durch <strong>Schlüssel</strong>: Ein Wert in Tabelle A verweist auf einen eindeutigen Wert in Tabelle B. MySQL ist das Datenbank-Managementsystem (DBMS), das diese Tabellen verwaltet — die Abfragesprache heißt SQL und ist in der Norm ISO/IEC 9075 beschrieben."},
- {box:{kind:"", title:"Begriffe sauber trennen", html:"<p><strong>SQL</strong> ist die Sprache. <strong>MySQL</strong> ist ein Produkt, das diese Sprache spricht. <strong>MariaDB</strong> ist ein 2009 abgespaltener Fork mit eigener Entwicklung. In IHK-Prüfungen wird diese Unterscheidung gern abgefragt.</p>"}},
+ {box:{kind:"exam", title:"Was die Abkürzungen bedeuten", html:"<p><strong>SQL</strong> steht für <em>Structured Query Language</em>, auf Deutsch „strukturierte Abfragesprache“. Gesprochen wird sie „Es-Q-El“ oder „Sequel“ — der Vorläufer bei IBM hieß tatsächlich SEQUEL (<em>Structured English Query Language</em>) und musste aus Markenrechtsgründen umbenannt werden.</p><p><strong>MySQL</strong> ist nicht das englische „mein SQL“, sondern nach <em>My</em> benannt, der Tochter des Mitgründers Michael Widenius. <strong>MariaDB</strong>, der 2009 abgespaltene Fork, trägt den Namen seiner jüngeren Tochter Maria.</p><p><strong>DBMS</strong> heißt <em>Database Management System</em> — Datenbank-Managementsystem. Kurz gesagt: SQL ist die Sprache, MySQL das Produkt, das sie spricht. In IHK-Prüfungen wird diese Unterscheidung gern abgefragt.</p><p>Alle weiteren Kürzel dieses Lernpfads stehen im <strong>Abkürzungsverzeichnis</strong> unter „Werkzeuge“.</p>"}},
  {h3:"Client-Server-Architektur"},
  {p:"MySQL läuft als Serverprozess (<code>mysqld</code>), der auf einem Port lauscht — standardmäßig <code>3306</code> für das klassische Protokoll und <code>33060</code> für das X-Protokoll. Clients wie <code>mysql</code> (CLI), MySQL Workbench, phpMyAdmin oder ein PHP-/Java-Programm verbinden sich, schicken SQL-Anweisungen und bekommen Ergebnismengen zurück. Der Server selbst ist mehrschichtig aufgebaut:"},
  {table:{head:["Schicht","Aufgabe"], rows:[
@@ -2500,7 +2515,7 @@ lead:"SQL ist nicht eine Sprache, sondern fünf Teilsprachen unter einem Dach. W
 body:[
  {h3:"Standard und Dialekt"},
  {p:"SQL ist in der Norm <strong>ISO/IEC 9075</strong> beschrieben. Jedes Datenbanksystem setzt davon einen Kern um und ergänzt eigene Erweiterungen — deshalb läuft eine Abfrage aus einem Oracle-Lehrbuch nicht zwangsläufig in MySQL. Der gemeinsame Kern ist groß genug, dass sich Kenntnisse übertragen lassen; die Abweichungen betreffen vor allem Begrenzung, Bezeichner und Funktionsnamen."},
- {p:"Traditionell wird SQL in Teilsprachen gegliedert. Die Namen sind keine Norm, sondern Lehrbuchkonvention — in Prüfungen werden sie aber genau so abgefragt:"},
+ {p:"Traditionell wird SQL in Teilsprachen gegliedert. Die Namen sind keine Norm, sondern Lehrbuchkonvention — in Prüfungen werden sie aber genau so abgefragt. Alle enden auf <em>Language</em>, unterscheiden sich also nur im ersten Buchstaben: <strong>D</strong>efinition, <strong>M</strong>anipulation, <strong>Q</strong>uery, <strong>C</strong>ontrol:"},
  {table:{head:["Familie","Steht für","Anweisungen","Zurückrollbar?"], rows:[
   ["<strong>DDL</strong>","Data Definition Language","CREATE, ALTER, DROP, TRUNCATE, RENAME","nein — implizites COMMIT"],
   ["<strong>DML</strong>","Data Manipulation Language","INSERT, UPDATE, DELETE, REPLACE, LOAD DATA","ja (InnoDB)"],
@@ -3151,7 +3166,7 @@ body:[
  {sql:"-- Aktuelle Stufe abfragen\nSELECT @@transaction_isolation;\n\n-- Nur für die nächste Transaktion\nSET TRANSACTION ISOLATION LEVEL READ COMMITTED;\n\n-- Für die ganze Sitzung\nSET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;\n\n-- Serverweit (braucht das Recht SUPER bzw. SYSTEM_VARIABLES_ADMIN)\nSET GLOBAL TRANSACTION ISOLATION LEVEL READ COMMITTED;", label:"Isolationsstufe setzen", run:false},
  {box:{kind:"exam", title:"Prüfungswissen", html:"<p>Der MySQL-Standard ist <strong>REPEATABLE READ</strong> — abweichend von PostgreSQL, Oracle und SQL Server, die READ COMMITTED verwenden. InnoDB verhindert auf dieser Stufe auch Phantom Reads, weil es mit Next-Key-Locks nicht nur Zeilen, sondern auch die Lücken zwischen Indexwerten sperrt. Je höher die Stufe, desto mehr Konsistenz und desto weniger Parallelität.</p>"}},
  {h3:"MVCC — warum Lesen nicht blockiert"},
- {p:"InnoDB arbeitet mit <strong>Multiversion Concurrency Control</strong>: Jede Zeile trägt intern eine Transaktionsnummer, und ältere Versionen bleiben im Undo-Log erhalten. Ein gewöhnliches <code>SELECT</code> liest deshalb einen <em>Schnappschuss</em> — den Zustand zum Beginn der Transaktion — und wird von Schreibern nie blockiert. Umgekehrt blockieren Leser auch keine Schreiber."},
+ {p:"InnoDB arbeitet mit <strong>MVCC</strong>, ausgeschrieben <em>Multiversion Concurrency Control</em> — „Mehrversionen-Nebenläufigkeitssteuerung“: Jede Zeile trägt intern eine Transaktionsnummer, und ältere Versionen bleiben im Undo-Log erhalten. Ein gewöhnliches <code>SELECT</code> liest deshalb einen <em>Schnappschuss</em> — den Zustand zum Beginn der Transaktion — und wird von Schreibern nie blockiert. Umgekehrt blockieren Leser auch keine Schreiber."},
  {table:{head:["Lesart","Verhalten"], rows:[
   ["<em>consistent read</em> (gewöhnliches SELECT)","liest aus dem Schnappschuss, sperrt nichts, wartet nie"],
   ["<em>locking read</em> (<code>FOR UPDATE</code>, <code>FOR SHARE</code>)","liest den aktuellen Stand und setzt eine Sperre"],
@@ -3756,6 +3771,121 @@ const QUIZ = [
 {cat:"Betrieb",q:"Was gilt für ein Backup, das nie zurückgespielt wurde?",a:["Es ist ausreichend","Es ist ungeprüft und damit kein verlässliches Backup","Es ist automatisch gültig","Es muss nur lesbar sein"],c:1,e:"Restore-Tests gehören fest in den Betriebsablauf — inklusive Zeitmessung für die Wiederherstellungsdauer."}
 ];
 
+
+/* =========================================================================
+   ABKÜRZUNGSVERZEICHNIS
+   ========================================================================= */
+const ABK = [
+{g:"Sprache und Grundlagen", e:[
+ ["SQL","Structured Query Language","„Strukturierte Abfragesprache“ — die Sprache, mit der relationale Datenbanken abgefragt und verwaltet werden. Gesprochen wird sie „Es-Q-El“ oder „Sequel“; der Vorläufer bei IBM hieß tatsächlich SEQUEL (Structured English Query Language) und musste aus Markenrechtsgründen umbenannt werden."],
+ ["MySQL","My + SQL","Benannt nach „My“, der Tochter des Mitgründers Michael Widenius — nicht nach dem englischen Wort für „mein“. Ausgesprochen wird es offiziell „My-Es-Q-El“."],
+ ["MariaDB","Maria + Database","Der 2009 abgespaltene Fork, benannt nach Widenius' jüngerer Tochter Maria."],
+ ["DB","Database","Datenbank."],
+ ["DBMS","Database Management System","Datenbank-Managementsystem — die Software, die Datenbanken verwaltet. MySQL ist ein DBMS."],
+ ["RDBMS","Relational Database Management System","Relationales DBMS, also eines, das Daten in Tabellen mit Beziehungen speichert."],
+ ["ANSI","American National Standards Institute","US-Normungsinstitut, das 1986 den ersten SQL-Standard verabschiedete."],
+ ["ISO","International Organization for Standardization","Internationale Normungsorganisation. SQL ist als ISO/IEC 9075 genormt."],
+ ["IEC","International Electrotechnical Commission","Internationale elektrotechnische Kommission, gemeinsam mit der ISO für die SQL-Norm zuständig."],
+ ["OSS","Open Source Software","Quelloffene Software. Die MySQL Community Edition steht unter der GPL."],
+ ["GPL","GNU General Public License","Die Lizenz der Community Edition. Wer MySQL in ein proprietäres Produkt einbettet, braucht eine kommerzielle Lizenz."],
+ ["LTS","Long Term Support","Langzeitunterstützung: fünf Jahre Premier und drei Jahre Extended Support, keine neuen Funktionen."],
+ ["EOL","End of Life","Ende der Unterstützung — ab dann gibt es keine Sicherheitsupdates mehr."],
+ ["IHK","Industrie- und Handelskammer","Zuständig für die Abschlussprüfung in der dualen Ausbildung."]
+]},
+{g:"Die SQL-Sprachfamilien", e:[
+ ["DDL","Data Definition Language","„Datendefinitionssprache“ — beschreibt die Struktur: CREATE, ALTER, DROP, TRUNCATE, RENAME."],
+ ["DML","Data Manipulation Language","„Datenmanipulationssprache“ — verändert Daten: INSERT, UPDATE, DELETE, REPLACE."],
+ ["DQL","Data Query Language","„Datenabfragesprache“ — SELECT und seine Kurzformen TABLE und VALUES. Manche Quellen zählen SELECT zur DML."],
+ ["DCL","Data Control Language","„Datenkontrollsprache“ — regelt Zugriffsrechte: GRANT und REVOKE."],
+ ["TCL","Transaction Control Language","„Transaktionskontrollsprache“ — COMMIT, ROLLBACK, SAVEPOINT."],
+ ["CRUD","Create, Read, Update, Delete","Die vier Grundoperationen auf Daten. In SQL: INSERT, SELECT, UPDATE, DELETE."],
+ ["CTE","Common Table Expression","„Gemeinsamer Tabellenausdruck“ — eine benannte Zwischenabfrage, eingeleitet mit WITH. Seit MySQL 8.0."]
+]},
+{g:"Modellierung und Schlüssel", e:[
+ ["ER","Entity-Relationship","„Gegenstand-Beziehung“ — das Modell, mit dem Fachdaten vor der Umsetzung beschrieben werden."],
+ ["ERM","Entity-Relationship-Modell","Das fertige Diagramm aus Entitäten, Attributen und Beziehungen."],
+ ["EER","Enhanced Entity-Relationship","Erweitertes ER-Modell mit Vererbung und Spezialisierung. So heißt der Diagrammtyp in MySQL Workbench."],
+ ["PK","Primary Key","Primärschlüssel — eindeutig und nicht NULL, genau einer je Tabelle."],
+ ["FK","Foreign Key","Fremdschlüssel — verweist auf den Schlüssel einer anderen Tabelle."],
+ ["AK","Alternate Key","Alternativschlüssel — ein Schlüsselkandidat, der nicht Primärschlüssel wurde; meist als UNIQUE umgesetzt."],
+ ["NF","Normalform","Stufe der Normalisierung: 1NF, 2NF, 3NF und darüber hinaus."],
+ ["BCNF","Boyce-Codd-Normalform","Verschärfung der 3NF: Jede Determinante muss ein Superschlüssel sein."],
+ ["FD","Functional Dependency","Funktionale Abhängigkeit — X bestimmt Y eindeutig, geschrieben X → Y."],
+ ["UUID","Universally Unique Identifier","Weltweit eindeutiger Bezeichner, 128 Bit. Als Primärschlüssel wegen der Zufallsverteilung problematisch."],
+ ["GUID","Globally Unique Identifier","Microsofts Bezeichnung für dasselbe."]
+]},
+{g:"Speicher und Transaktionen", e:[
+ ["ACID","Atomicity, Consistency, Isolation, Durability","Atomarität, Konsistenz, Isolation, Dauerhaftigkeit — die vier Garantien einer Transaktion."],
+ ["MVCC","Multiversion Concurrency Control","„Mehrversionen-Nebenläufigkeitssteuerung“ — Leser sehen einen Schnappschuss und blockieren nie."],
+ ["InnoDB","Innobase Database","Die Standard-Storage-Engine seit MySQL 5.5, ursprünglich von der finnischen Firma Innobase Oy."],
+ ["MyISAM","My + Indexed Sequential Access Method","Die alte Standard-Engine ohne Transaktionen und Fremdschlüssel."],
+ ["ISAM","Indexed Sequential Access Method","„Indizierte sequentielle Zugriffsmethode“ — ein Dateizugriffsverfahren aus der Großrechnerzeit."],
+ ["WAL","Write-Ahead Logging","„Vorausschreibendes Protokollieren“ — erst ins Log, dann in die Datendateien. In InnoDB das Redo-Log."],
+ ["LSN","Log Sequence Number","Fortlaufende Nummer im Redo-Log, mit der InnoDB den Wiederherstellungspunkt bestimmt."],
+ ["2PC","Two-Phase Commit","Zweiphasen-Commit — Protokoll, um eine Transaktion über mehrere Systeme hinweg abzustimmen."],
+ ["XA","eXtended Architecture","Standard für verteilte Transaktionen; in MySQL über XA START, XA PREPARE, XA COMMIT."],
+ ["TDE","Transparent Data Encryption","Verschlüsselung ruhender Daten auf Tablespace-Ebene, ohne Änderung an der Anwendung."]
+]},
+{g:"Abfragen und Optimierung", e:[
+ ["ICP","Index Condition Pushdown","Der Filter wird bereits in der Storage Engine geprüft. EXPLAIN zeigt „Using index condition“."],
+ ["MRR","Multi-Range Read","Optimierung, die Zeilenzugriffe nach Primärschlüssel sortiert, um weniger zufällig zu lesen."],
+ ["BKA","Batched Key Access","Join-Verfahren, das Schlüssel gebündelt an die Storage Engine übergibt."],
+ ["BNL","Block Nested Loop","Join-Verfahren mit Zwischenpuffer, wenn kein Index nutzbar ist. EXPLAIN zeigt „Using join buffer“."],
+ ["FTS","Full-Text Search","Volltextsuche über einen FULLTEXT-Index mit MATCH … AGAINST."],
+ ["OLTP","Online Transaction Processing","Transaktionsverarbeitung im Tagesgeschäft: viele kurze Schreib- und Lesevorgänge. Der typische MySQL-Einsatz."],
+ ["OLAP","Online Analytical Processing","Analytische Verarbeitung: wenige, dafür große Auswertungsabfragen über viel Datenbestand."],
+ ["ETL","Extract, Transform, Load","„Extrahieren, Transformieren, Laden“ — der Ablauf beim Übernehmen von Daten aus Fremdsystemen."]
+]},
+{g:"Betrieb und Replikation", e:[
+ ["GTID","Global Transaction Identifier","Global eindeutige Transaktions-ID; vereinfacht Positionierung und Failover in der Replikation."],
+ ["PITR","Point-in-Time Recovery","Wiederherstellung auf einen exakten Zeitpunkt mittels Vollbackup plus Binärlog."],
+ ["RPO","Recovery Point Objective","Wie viel Datenverlust ist im Notfall hinnehmbar? Bestimmt die Sicherungshäufigkeit."],
+ ["RTO","Recovery Time Objective","Wie lange darf die Wiederherstellung dauern? Bestimmt das Sicherungsverfahren."],
+ ["HA","High Availability","Hochverfügbarkeit — etwa über InnoDB Cluster mit Group Replication."],
+ ["SPOF","Single Point of Failure","Einzelne Komponente, deren Ausfall das ganze System lahmlegt."],
+ ["Binlog","Binary Log","Binärlog — protokolliert alle datenverändernden Anweisungen. Grundlage für Replikation und PITR."],
+ ["SLA","Service Level Agreement","Vereinbarung über zugesicherte Verfügbarkeit und Reaktionszeiten."]
+]},
+{g:"Zeichensätze und Datentypen", e:[
+ ["UTF-8","Unicode Transformation Format, 8 Bit","Zeichencodierung variabler Länge. In MySQL heißt die vollständige Variante utf8mb4."],
+ ["utf8mb4","UTF-8, maximal 4 Byte","Vollständiges Unicode inklusive Emoji. Der einzig richtige Zeichensatz für neue Projekte."],
+ ["utf8mb3","UTF-8, maximal 3 Byte","Der alte, unvollständige Alias „utf8“. Kann Zeichen außerhalb der BMP nicht speichern."],
+ ["BMP","Basic Multilingual Plane","Die ersten 65 536 Unicode-Zeichen. Alles darüber braucht vier Byte."],
+ ["BOM","Byte Order Mark","Kennung am Dateianfang (EF BB BF), an der Excel eine UTF-8-Datei erkennt."],
+ ["ci / cs","case-insensitive / case-sensitive","Groß- und Kleinschreibung wird ignoriert bzw. unterschieden — Teil des Kollationsnamens."],
+ ["ai / as","accent-insensitive / accent-sensitive","Akzente werden ignoriert bzw. unterschieden."],
+ ["BLOB","Binary Large Object","„Großes Binärobjekt“ — Datentyp für Binärdaten wie Bilder oder PDF-Dateien."],
+ ["CLOB","Character Large Object","Das Textgegenstück; in MySQL heißt der Typ TEXT."],
+ ["JSON","JavaScript Object Notation","Textformat für verschachtelte Daten. Seit MySQL 5.7 ein eigener, validierter Datentyp."],
+ ["SRID","Spatial Reference System Identifier","Kennung des Koordinatensystems. 4326 steht für WGS 84, also GPS-Koordinaten."],
+ ["WGS 84","World Geodetic System 1984","Das Bezugssystem hinter GPS."]
+]},
+{g:"Anbindung und Werkzeuge", e:[
+ ["API","Application Programming Interface","Programmierschnittstelle."],
+ ["CLI","Command Line Interface","Kommandozeile — der Client heißt schlicht <code>mysql</code>."],
+ ["GUI","Graphical User Interface","Grafische Oberfläche, etwa MySQL Workbench."],
+ ["JDBC","Java Database Connectivity","Javas Datenbankschnittstelle. Der MySQL-Treiber heißt Connector/J."],
+ ["ODBC","Open Database Connectivity","Herstellerübergreifende Schnittstelle, vor allem unter Windows."],
+ ["PDO","PHP Data Objects","PHPs einheitliche Datenbankschnittstelle mit Prepared Statements."],
+ ["ORM","Object-Relational Mapping","Objektrelationale Abbildung — Doctrine, Eloquent, Hibernate. Bequem, erzeugt aber leicht Abfragefluten."],
+ ["DSN","Data Source Name","Verbindungszeichenkette, etwa <code>mysql:host=…;dbname=…;charset=utf8mb4</code>."],
+ ["N+1","N plus 1","Das Problem, für N Ergebniszeilen je eine weitere Abfrage abzusetzen. Lösung: JOIN oder IN (…)."],
+ ["CSV","Comma-Separated Values","„Kommagetrennte Werte“ — deutsche Exporte verwenden allerdings meist Semikolon."],
+ ["TSV","Tab-Separated Values","Dasselbe mit Tabulator als Trenner."]
+]},
+{g:"Netz und Sicherheit", e:[
+ ["TCP","Transmission Control Protocol","Verbindungsorientiertes Netzprotokoll. MySQL lauscht standardmäßig auf Port 3306."],
+ ["IP","Internet Protocol","Adressierung im Netz. Achtung: <code>localhost</code> nutzt den Socket, <code>127.0.0.1</code> nutzt TCP."],
+ ["TLS","Transport Layer Security","Verschlüsselung der Verbindung. Der ältere Name SSL wird weiterhin als Schlüsselwort verwendet."],
+ ["SSL","Secure Sockets Layer","Vorgänger von TLS. In MySQL steht <code>REQUIRE SSL</code> faktisch für TLS."],
+ ["SHA","Secure Hash Algorithm","Hashverfahren. Standard-Authentifizierung seit 8.0: <code>caching_sha2_password</code>."],
+ ["MD5","Message Digest 5","Veraltetes Hashverfahren — für Passwörter ungeeignet, weil zu schnell."],
+ ["DSGVO","Datenschutz-Grundverordnung","EU-Verordnung zum Schutz personenbezogener Daten. Englisch: GDPR."],
+ ["RBAC","Role-Based Access Control","Rollenbasierte Rechtevergabe, in MySQL seit 8.0 über CREATE ROLE."],
+ ["2FA","Zwei-Faktor-Authentifizierung","Anmeldung mit zwei unabhängigen Nachweisen; in MySQL 8.0 auch für Konten möglich."]
+]}
+];
+
 /* =========================================================================
    8) SPICKZETTEL
    ========================================================================= */
@@ -4179,6 +4309,22 @@ const CARDS = [
 
 /* ---------- Fragen zu den SQL-Sprachfamilien ---------- */
 QUIZ.push(
+{cat:"Abkürzungen",q:"Wofür steht SQL?",a:["Simple Query Logic","Structured Query Language","System Query Layer","Sequential Query Language"],c:1,e:"„Strukturierte Abfragesprache“. Der IBM-Vorläufer hieß SEQUEL (Structured English Query Language) und musste aus Markenrechtsgründen umbenannt werden."},
+{cat:"Abkürzungen",q:"Woher stammt der Name MySQL?",a:["Vom englischen „mein SQL“","Von My, der Tochter des Mitgründers Michael Widenius","Von Mydata, der Vorgängerfirma","Von Multi-Year SQL"],c:1,e:"MariaDB, der 2009 abgespaltene Fork, trägt den Namen seiner jüngeren Tochter Maria."},
+{cat:"Abkürzungen",q:"Wofür steht DBMS?",a:["Database Master System","Database Management System","Data Backup Management Service","Distributed Base Management Server"],c:1,e:"Datenbank-Managementsystem — die Software, die Datenbanken verwaltet. MySQL ist ein DBMS."},
+{cat:"Abkürzungen",q:"Wofür steht DDL?",a:["Data Download Language","Data Definition Language","Direct Data Link","Database Design Layer"],c:1,e:"Datendefinitionssprache: CREATE, ALTER, DROP, TRUNCATE, RENAME."},
+{cat:"Abkürzungen",q:"Wofür steht DML?",a:["Data Model Language","Data Manipulation Language","Database Markup Language","Direct Memory Load"],c:1,e:"Datenmanipulationssprache: INSERT, UPDATE, DELETE, REPLACE."},
+{cat:"Abkürzungen",q:"Wofür stehen die vier Buchstaben in ACID?",a:["Access, Control, Integrity, Durability","Atomicity, Consistency, Isolation, Durability","Atomic, Concurrent, Indexed, Distributed","Availability, Consistency, Isolation, Data"],c:1,e:"Atomarität, Konsistenz, Isolation, Dauerhaftigkeit — die vier Garantien einer Transaktion."},
+{cat:"Abkürzungen",q:"Wofür steht CRUD?",a:["Create, Read, Update, Delete","Copy, Restore, Undo, Delete","Cache, Read, Use, Drop","Create, Rollback, Update, Drop"],c:1,e:"Die vier Grundoperationen. In SQL: INSERT, SELECT, UPDATE, DELETE."},
+{cat:"Abkürzungen",q:"Wofür steht MVCC?",a:["Multi-Value Column Check","Multiversion Concurrency Control","Master View Cache Control","Multi-Version Commit Cycle"],c:1,e:"Mehrversionen-Nebenläufigkeitssteuerung: Leser sehen einen Schnappschuss und blockieren nie."},
+{cat:"Abkürzungen",q:"Wofür steht CTE?",a:["Common Table Expression","Central Transaction Engine","Compiled Table Extract","Conditional Table Entry"],c:0,e:"Gemeinsamer Tabellenausdruck, eingeleitet mit WITH. Seit MySQL 8.0."},
+{cat:"Abkürzungen",q:"Wofür steht GTID?",a:["General Table Identifier","Global Transaction Identifier","Grouped Transfer ID","Generic Type Definition"],c:1,e:"Global eindeutige Transaktions-ID — vereinfacht Positionierung und Failover in der Replikation."},
+{cat:"Abkürzungen",q:"Wofür steht ISAM in MyISAM?",a:["Internal Storage Access Method","Indexed Sequential Access Method","Integrated System Access Model","Index Search And Match"],c:1,e:"Indizierte sequentielle Zugriffsmethode — ein Dateizugriffsverfahren aus der Großrechnerzeit."},
+{cat:"Abkürzungen",q:"Wofür steht PITR?",a:["Primary Index Table Rebuild","Point-in-Time Recovery","Partial Import Transfer Routine","Persistent Instance Transaction Record"],c:1,e:"Wiederherstellung auf einen exakten Zeitpunkt mit Vollbackup plus Binärlog."},
+{cat:"Abkürzungen",q:"Wofür steht ERM?",a:["Extended Relation Model","Entity-Relationship-Modell","Enterprise Resource Management","Escape Rule Mapping"],c:1,e:"Das Modell aus Entitäten, Attributen und Beziehungen — die Grundlage jeder Datenmodellierung."},
+{cat:"Abkürzungen",q:"Wofür steht OLTP?",a:["Online Table Processing","Online Transaction Processing","Optimized Load Transfer Protocol","Object Level Transaction Pool"],c:1,e:"Transaktionsverarbeitung im Tagesgeschäft: viele kurze Vorgänge. Das Gegenstück OLAP steht für Online Analytical Processing."},
+{cat:"Abkürzungen",q:"Wofür steht PDO in PHP?",a:["PHP Database Operator","PHP Data Objects","Prepared Data Output","Persistent Database Object"],c:1,e:"PHPs einheitliche Datenbankschnittstelle mit Prepared Statements."},
+{cat:"Abkürzungen",q:"Wofür steht SRID?",a:["Spatial Reference System Identifier","Server Resource ID","Sequential Row Index Definition","Secure Record Identifier"],c:0,e:"Kennung des Koordinatensystems. 4326 steht für WGS 84, also GPS-Koordinaten."},
 {cat:"Transaktionen",q:"Was bewirkt SET autocommit = 0 für die Sitzung?",a:["Transaktionen werden abgeschaltet","Nach jedem COMMIT beginnt automatisch eine neue Transaktion — ohne COMMIT bleiben Sperren bestehen","Alle Änderungen sind sofort dauerhaft","ROLLBACK wird unmöglich"],c:1,e:"Wer dann das COMMIT vergisst, hält Sperren, bis die Verbindung endet."},
 {cat:"Transaktionen",q:"Was bedeutet Fehler 1205 'Lock wait timeout exceeded'?",a:["Ein Deadlock","Eine andere Transaktion hält die Zeile länger als innodb_lock_wait_timeout erlaubt","Der Server ist überlastet","Die Tabelle ist beschädigt"],c:1,e:"Das ist kein Deadlock, sondern eine zu lange laufende Transaktion. Standardwert: 50 Sekunden. Ursache über information_schema.innodb_trx finden."},
 {cat:"Transaktionen",q:"Wie verhindert man ein Lost Update am einfachsten?",a:["Mit einer höheren Isolationsstufe","Den Server rechnen lassen: UPDATE lager SET bestand = bestand - 3","Mit COMMIT nach jeder Anweisung","Gar nicht"],c:1,e:"Alternativ pessimistisch mit SELECT … FOR UPDATE oder optimistisch mit einer Versionsspalte. Kein Isolationslevel hilft, wenn in der Anwendung gerechnet wird."},
@@ -4238,6 +4384,18 @@ QUIZ.push(
 );
 
 SHEET.push(
+{h:"Abkürzungen kurz", d:[
+ ["SQL","Structured Query Language"],
+ ["DBMS","Database Management System"],
+ ["DDL / DML","Data Definition / Manipulation Language"],
+ ["DQL / DCL / TCL","Query / Control / Transaction Control Language"],
+ ["ACID","Atomicity, Consistency, Isolation, Durability"],
+ ["CRUD","Create, Read, Update, Delete"],
+ ["MVCC","Multiversion Concurrency Control"],
+ ["CTE","Common Table Expression"],
+ ["ERM","Entity-Relationship-Modell"],
+ ["GTID","Global Transaction Identifier"]
+]},
 {h:"SQL-Sprachfamilien", d:[
  ["DDL","CREATE · ALTER · DROP · TRUNCATE"],
  ["DML","INSERT · UPDATE · DELETE · REPLACE"],
@@ -4499,6 +4657,7 @@ function buildIndex(){
   TASKS.forEach(t => idx.push({t:"Übungsaufgabe · " + t.c, h:stripTags(t.q), x:t.s, go:"trainer", code:true}));
   CARDS.forEach(c => idx.push({t:"Karteikarte · " + c.c, h:c.f, x:stripTags(c.b), go:"karteikarten"}));
   SHEET.forEach(sc => idx.push({t:"Spickzettel", h:sc.h, x:sc.d.map(d => d[0] + " — " + stripTags(d[1])).join(" · "), go:"spickzettel"}));
+  ABK.forEach(g => g.e.forEach(e => idx.push({t:"Abkürzung · " + g.g, h:e[0] + " — " + e[1], x:stripTags(e[2]), go:"abkuerzungen"})));
   SOURCES.forEach(q => idx.push({t:"Quelle", h:q.t, x:q.d, go:"quellen"}));
   return idx;
 }
@@ -4544,6 +4703,7 @@ const EXTRA = [
   {id:"quiz", label:"Prüfungsquiz", icon:"?"},
   {id:"karteikarten", label:"Karteikarten", icon:"▤"},
   {id:"suche", label:"Suche", icon:"⌕"},
+  {id:"abkuerzungen", label:"Abkürzungen", icon:"A–Z"},
   {id:"spickzettel", label:"Spickzettel", icon:"≡"},
   {id:"quellen", label:"Quellen", icon:"§"}
 ];
@@ -4843,6 +5003,7 @@ function viewStart(){
     '<div class="card"><span class="big">' + QUIZ.length + '</span><h4>Prüfungsfragen</h4><p>Nach Themen filterbar, mit Erklärung zu jeder Antwort — ausgelegt auf die IHK-Abschlussprüfung.</p></div>' +
     '<div class="card" style="cursor:pointer" onclick="go(\'datenmodell\')"><span class="big">4</span><h4>Übungstabellen</h4><p>Ein kleiner IT-Betrieb: Abteilungen, Mitarbeiter, Geräte und Tickets. Zum ER-Diagramm →</p></div>' +
     '<div class="card" style="cursor:pointer" onclick="go(\'trainer\')"><span class="big">' + TASKS.length + '</span><h4>Übungsaufgaben</h4><p>Eigener Trainer mit drei Schwierigkeitsstufen und automatischer Ergebnisprüfung.</p></div>' +
+    '<div class="card" style="cursor:pointer" onclick="go(\'abkuerzungen\')"><span class="big">' + ABK.reduce((a,g)=>a+g.e.length,0) + '</span><h4>Abkürzungen</h4><p>Von SQL bis GTID — ausgeschrieben, übersetzt und eingeordnet.</p></div>' +
     '<div class="card" style="cursor:pointer" onclick="go(\'karteikarten\')"><span class="big">' + CARDS.length + '</span><h4>Karteikarten</h4><p>Begriffe nach dem Leitner-Prinzip wiederholen — ideal für die letzten Tage vor der Prüfung.</p></div>' +
     '<div class="card"><span class="big">' + STATE.done.length + '/' + CHAPTERS.length + '</span><h4>Dein Fortschritt</h4><p>' + (runde ? "Bestes Quizergebnis: " + runde + " %." : "Noch kein Quiz absolviert.") + ' Alles bleibt lokal auf deinem Gerät.</p></div>' +
     '</div>' +
@@ -5354,6 +5515,38 @@ function stateResetGo(){
   go("start");
 }
 
+/* ---------- Abkürzungsverzeichnis ---------- */
+let ABK_Q = "";
+function viewAbk(){
+  const n = ABK.reduce((a, g) => a + g.e.length, 0);
+  return '<div class="wrap"><section class="chaphead"><div class="kicker">Werkzeug · Nachschlagen</div><h2>Abkürzungen</h2>' +
+    "<p>" + n + ' Abkürzungen aus der Datenbankwelt — ausgeschrieben, übersetzt und eingeordnet. In Prüfungen wird regelmäßig danach gefragt, wofür die Buchstaben stehen.</p></section>' +
+    '<div class="editor" style="margin-bottom:20px"><input id="abkq" type="search" placeholder="Abkürzung oder Begriff suchen …" ' +
+    'style="width:100%;background:transparent;border:0;color:var(--sand);font-family:var(--mono);font-size:16px;padding:13px 16px" ' +
+    'value="' + esc(ABK_Q) + '" autocapitalize="characters" autocorrect="off" oninput="abkFilter()"></div>' +
+    '<div id="abkBox"></div></div>';
+}
+function abkRender(q){
+  const t = (q || "").trim().toLowerCase();
+  let treffer = 0, h = "";
+  for(const g of ABK){
+    const e = g.e.filter(x => !t || x[0].toLowerCase().includes(t) || x[1].toLowerCase().includes(t) || stripTags(x[2]).toLowerCase().includes(t));
+    if(!e.length) continue;
+    treffer += e.length;
+    h += '<h3 style="font-family:var(--display);font-size:20px;margin:30px 0 4px">' + g.g + "</h3>" +
+      '<div class="abklist">' + e.map(x =>
+        '<div class="abk"><div class="abkhead"><span class="kurz">' + esc(x[0]) + '</span>' +
+        '<span class="lang">' + esc(x[1]) + "</span></div>" +
+        '<p>' + x[2] + "</p></div>").join("") + "</div>";
+  }
+  if(!treffer) return '<p style="color:var(--muted)">Keine Abkürzung passt zu „' + esc(q) + "“.</p>";
+  return (t ? '<p style="font-family:var(--mono);font-size:12.5px;color:var(--muted)">' + treffer + " Treffer</p>" : "") + h;
+}
+function abkFilter(){
+  ABK_Q = document.getElementById("abkq").value;
+  document.getElementById("abkBox").innerHTML = abkRender(ABK_Q);
+}
+
 /* ---------- Spickzettel & Quellen ---------- */
 function viewSheet(){
   return '<div class="wrap"><section class="chaphead"><div class="kicker">Werkzeug · Referenz</div><h2>Spickzettel</h2>' +
@@ -5361,6 +5554,7 @@ function viewSheet(){
     '<div class="sheet">' + SHEET.map(s => '<div class="sheetcard"><h4>' + s.h + "</h4><dl>" +
       s.d.map(d => "<dt>" + esc(d[0]) + "</dt><dd>" + d[1] + "</dd>").join("") + "</dl></div>").join("") + "</div>" +
     '<div class="chapfoot"><button class="btn" onclick="window.print()">Seite drucken</button>' +
+    '<button class="btn" onclick="go(\'abkuerzungen\')">Abkürzungen nachschlagen</button>' +
     '<button class="btn primary" onclick="go(\'quiz\')">Wissen testen →</button></div></div>';
 }
 function viewSources(){
@@ -5385,6 +5579,7 @@ function go(id){
   else if(id === "quiz") main.innerHTML = viewQuiz();
   else if(id === "karteikarten") main.innerHTML = viewCards();
   else if(id === "suche"){ main.innerHTML = viewSearch(); setTimeout(() => { const el = document.getElementById("sq"); if(el){ el.focus(); if(LAST_QUERY) runSearch(); } }, 30); }
+  else if(id === "abkuerzungen"){ main.innerHTML = viewAbk(); document.getElementById("abkBox").innerHTML = abkRender(ABK_Q); }
   else if(id === "spickzettel") main.innerHTML = viewSheet();
   else if(id === "quellen") main.innerHTML = viewSources();
   else { main.innerHTML = viewStart(); heroAnim(); }
