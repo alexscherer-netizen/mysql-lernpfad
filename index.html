@@ -67,6 +67,7 @@ code,kbd{font-family:var(--mono);font-size:.88em}
 }
 .tbtn:hover{border-color:var(--teal);color:#fff}
 .tbtn.on{background:var(--amber);color:#10221c;border-color:var(--amber);font-weight:700}
+.tbtn[aria-current="page"]{border-color:var(--amber);color:var(--amber)}
 #railToggle{display:none}
 .progwrap{display:flex;align-items:center;gap:9px}
 .ring{width:34px;height:34px;transform:rotate(-90deg)}
@@ -298,6 +299,21 @@ mark{background:rgba(245,165,36,.28);color:#ffe6b8;border-radius:3px;padding:0 2
   .abk p{font-size:14px}
 }
 
+@media print{
+  .topbar,.rail,.scrim,.bottombar,.chapfoot,footer.site{display:none!important}
+  body{background:#fff;color:#000}
+  .shell{display:block}
+  .wrap{max-width:100%;padding:0}
+  .sheet{columns:2;column-gap:14px}
+  .sheetcard{border:1px solid #bbb;background:#fff;break-inside:avoid;page-break-inside:avoid}
+  .sheetcard h4{color:#000}
+  .sheetcard dt{color:#000}
+  .sheetcard dd{color:#333}
+  .chaphead h2,h3{color:#000}
+  .chaphead p,p{color:#333}
+  a{color:#000;text-decoration:none}
+}
+
 /* ---------- Quellen ---------- */
 .src{border-bottom:1px solid var(--line-soft);padding:14px 0}
 .src:last-child{border-bottom:0}
@@ -390,19 +406,24 @@ footer.site ul{list-style:none;padding:0;margin:0}
   .scrim{position:fixed;inset:0;background:rgba(3,10,13,.6);z-index:50;display:none}
   .scrim.on{display:block}
 }
+@media (max-width:1180px) and (min-width:981px){
+  .topbar .pill{display:none}
+}
 @media (max-width:980px){
   .keys{display:flex}
   .bottombar{
-    display:grid;grid-template-columns:repeat(5,1fr);gap:2px;position:fixed;left:0;right:0;bottom:0;z-index:58;
+    display:grid;grid-template-columns:repeat(6,1fr);gap:1px;position:fixed;left:0;right:0;bottom:0;z-index:58;
     background:rgba(10,31,39,.96);backdrop-filter:blur(14px);border-top:1px solid var(--line);
     padding:6px 6px calc(6px + env(safe-area-inset-bottom));
   }
   .bottombar button{
-    display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;color:var(--muted);
-    font-family:var(--body);font-size:11px;padding:7px 2px;border-radius:10px;cursor:pointer;min-height:48px
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:0;color:var(--muted);
+    font-family:var(--body);font-size:10.5px;padding:7px 1px;border-radius:9px;cursor:pointer;min-height:48px;
+    letter-spacing:-.01em;white-space:nowrap
   }
   .bottombar button:active{background:var(--ink-3);color:var(--amber)}
-  .bottombar .bi{font-family:var(--mono);font-size:16px;line-height:1}
+  .bottombar .bi{font-family:var(--mono);font-size:15px;line-height:1}
+  .bottombar .active{color:var(--amber)}
   main{padding-bottom:86px}
   footer.site{padding-bottom:110px}
   .rail{padding-bottom:100px}
@@ -461,7 +482,9 @@ footer.site ul{list-style:none;padding:0;margin:0}
   <span class="spacer"></span>
   <button class="tbtn always" onclick="go('suche')" aria-label="Suche">⌕</button>
   <button class="tbtn" onclick="go('playground')">Konsole</button>
+  <button class="tbtn" onclick="go('trainer')">Üben</button>
   <button class="tbtn" onclick="go('quiz')">Quiz</button>
+  <button class="tbtn" onclick="go('spickzettel')">Spickzettel</button>
   <div class="progwrap" title="Lernfortschritt">
     <svg class="ring" viewBox="0 0 40 40"><circle class="bg" cx="20" cy="20" r="16"></circle><circle class="fg" id="ring" cx="20" cy="20" r="16" stroke-dasharray="0 100.5"></circle></svg>
     <span class="progtxt" id="progtxt">0 %</span>
@@ -479,9 +502,10 @@ footer.site ul{list-style:none;padding:0;margin:0}
 <nav class="bottombar" id="bottombar" aria-label="Schnellzugriff">
   <button onclick="toggleRail()" aria-label="Kapitel"><span class="bi">☰</span><span class="bl">Kapitel</span></button>
   <button onclick="go('playground')" aria-label="Konsole"><span class="bi">›_</span><span class="bl">Konsole</span></button>
+  <button onclick="go('trainer')" aria-label="Aufgabentrainer"><span class="bi">✎</span><span class="bl">Üben</span></button>
   <button onclick="go('quiz')" aria-label="Quiz"><span class="bi">?</span><span class="bl">Quiz</span></button>
   <button onclick="go('karteikarten')" aria-label="Karteikarten"><span class="bi">▤</span><span class="bl">Karten</span></button>
-  <button onclick="go('suche')" aria-label="Suche"><span class="bi">⌕</span><span class="bl">Suche</span></button>
+  <button onclick="go('spickzettel')" aria-label="Spickzettel"><span class="bi">≡</span><span class="bl">Spicker</span></button>
 </nav>
 <footer class="site">
   <div class="wrap">
@@ -4384,17 +4408,78 @@ QUIZ.push(
 );
 
 SHEET.push(
-{h:"Abkürzungen kurz", d:[
+{h:"Abkürzungen — Sprache", d:[
  ["SQL","Structured Query Language"],
- ["DBMS","Database Management System"],
- ["DDL / DML","Data Definition / Manipulation Language"],
- ["DQL / DCL / TCL","Query / Control / Transaction Control Language"],
- ["ACID","Atomicity, Consistency, Isolation, Durability"],
+ ["MySQL","My + SQL (Tochter des Gründers)"],
+ ["DB / DBMS","Database / Database Management System"],
+ ["RDBMS","Relational DBMS"],
+ ["DDL","Data Definition Language"],
+ ["DML","Data Manipulation Language"],
+ ["DQL","Data Query Language"],
+ ["DCL","Data Control Language"],
+ ["TCL","Transaction Control Language"],
  ["CRUD","Create, Read, Update, Delete"],
+ ["CTE","Common Table Expression"]
+]},
+{h:"Abkürzungen — Modellierung", d:[
+ ["ER / ERM","Entity-Relationship(-Modell)"],
+ ["EER","Enhanced Entity-Relationship"],
+ ["PK / FK","Primary Key / Foreign Key"],
+ ["AK","Alternate Key"],
+ ["NF","Normalform (1NF, 2NF, 3NF)"],
+ ["BCNF","Boyce-Codd-Normalform"],
+ ["FD","Functional Dependency"],
+ ["UUID","Universally Unique Identifier"]
+]},
+{h:"Abkürzungen — Speicher & Transaktion", d:[
+ ["ACID","Atomicity, Consistency, Isolation, Durability"],
  ["MVCC","Multiversion Concurrency Control"],
- ["CTE","Common Table Expression"],
- ["ERM","Entity-Relationship-Modell"],
- ["GTID","Global Transaction Identifier"]
+ ["InnoDB","Innobase Database"],
+ ["MyISAM","My + Indexed Sequential Access Method"],
+ ["WAL","Write-Ahead Logging (Redo-Log)"],
+ ["LSN","Log Sequence Number"],
+ ["2PC","Two-Phase Commit"],
+ ["XA","eXtended Architecture (verteilte Transaktionen)"],
+ ["TDE","Transparent Data Encryption"]
+]},
+{h:"Abkürzungen — Abfrage & Betrieb", d:[
+ ["ICP","Index Condition Pushdown"],
+ ["MRR","Multi-Range Read"],
+ ["BKA / BNL","Batched Key Access / Block Nested Loop"],
+ ["FTS","Full-Text Search"],
+ ["OLTP","Online Transaction Processing"],
+ ["OLAP","Online Analytical Processing"],
+ ["ETL","Extract, Transform, Load"],
+ ["GTID","Global Transaction Identifier"],
+ ["PITR","Point-in-Time Recovery"],
+ ["RPO / RTO","Recovery Point / Time Objective"],
+ ["HA / SPOF","High Availability / Single Point of Failure"]
+]},
+{h:"Abkürzungen — Typen & Zeichen", d:[
+ ["UTF-8","Unicode Transformation Format, 8 Bit"],
+ ["utf8mb4 / utf8mb3","UTF-8 mit max. 4 bzw. 3 Byte"],
+ ["BMP","Basic Multilingual Plane"],
+ ["BOM","Byte Order Mark (EF BB BF)"],
+ ["ci / cs","case-insensitive / case-sensitive"],
+ ["ai / as","accent-insensitive / accent-sensitive"],
+ ["BLOB / CLOB","Binary / Character Large Object"],
+ ["JSON","JavaScript Object Notation"],
+ ["SRID","Spatial Reference System Identifier"],
+ ["WGS 84","World Geodetic System 1984"]
+]},
+{h:"Abkürzungen — Anbindung & Sicherheit", d:[
+ ["API / CLI / GUI","Programmier-, Kommandozeilen-, grafische Schnittstelle"],
+ ["JDBC / ODBC","Java / Open Database Connectivity"],
+ ["PDO","PHP Data Objects"],
+ ["ORM","Object-Relational Mapping"],
+ ["DSN","Data Source Name"],
+ ["CSV / TSV","Comma- / Tab-Separated Values"],
+ ["TCP / IP","Transmission Control / Internet Protocol"],
+ ["TLS / SSL","Transport Layer Security / Secure Sockets Layer"],
+ ["SHA / MD5","Secure Hash Algorithm / Message Digest 5"],
+ ["RBAC","Role-Based Access Control"],
+ ["DSGVO","Datenschutz-Grundverordnung"],
+ ["LTS / EOL","Long Term Support / End of Life"]
 ]},
 {h:"SQL-Sprachfamilien", d:[
  ["DDL","CREATE · ALTER · DROP · TRUNCATE"],
@@ -4707,6 +4792,17 @@ const EXTRA = [
   {id:"spickzettel", label:"Spickzettel", icon:"≡"},
   {id:"quellen", label:"Quellen", icon:"§"}
 ];
+function markTabs(id){
+  const map = {playground:"Konsole", trainer:"Üben", quiz:"Quiz", spickzettel:"Spickzettel"};
+  document.querySelectorAll(".topbar .tbtn").forEach(b => {
+    if(map[id] && b.textContent.trim() === map[id]) b.setAttribute("aria-current", "page");
+    else b.removeAttribute("aria-current");
+  });
+  const bb = {playground:1, trainer:2, quiz:3, karteikarten:4, spickzettel:5};
+  document.querySelectorAll(".bottombar button").forEach((b, i) => {
+    b.classList.toggle("active", bb[id] === i);
+  });
+}
 function paintNav(){
   const rail = document.getElementById("rail");
   let h = '<div class="railhead">it_betrieb — lernpfad</div>';
@@ -5549,12 +5645,20 @@ function abkFilter(){
 
 /* ---------- Spickzettel & Quellen ---------- */
 function viewSheet(){
+  const karte = sc => '<div class="sheetcard"><h4>' + sc.h.replace(/^Abkürzungen — /, "") + "</h4><dl>" +
+    sc.d.map(d => "<dt>" + esc(d[0]) + "</dt><dd>" + d[1] + "</dd>").join("") + "</dl></div>";
+  const praxis = SHEET.filter(sc => !/^Abkürzungen/.test(sc.h));
+  const abk    = SHEET.filter(sc =>  /^Abkürzungen/.test(sc.h));
+  const zeilen = SHEET.reduce((n, sc) => n + sc.d.length, 0);
   return '<div class="wrap"><section class="chaphead"><div class="kicker">Werkzeug · Referenz</div><h2>Spickzettel</h2>' +
-    "<p>Die wichtigsten Formen auf einen Blick — zum Wiederholen kurz vor der Prüfung.</p></section>" +
-    '<div class="sheet">' + SHEET.map(s => '<div class="sheetcard"><h4>' + s.h + "</h4><dl>" +
-      s.d.map(d => "<dt>" + esc(d[0]) + "</dt><dd>" + d[1] + "</dd>").join("") + "</dl></div>").join("") + "</div>" +
+    "<p>" + zeilen + ' Merkposten auf einen Blick — Syntax, Fallstricke und alle Abkürzungen ausgeschrieben. Zum Wiederholen kurz vor der Prüfung, und über den Knopf unten auch als Ausdruck.</p></section>' +
+    '<h3 style="font-family:var(--display);font-size:21px;margin:0 0 14px">Syntax und Praxis</h3>' +
+    '<div class="sheet">' + praxis.map(karte).join("") + "</div>" +
+    '<h3 style="font-family:var(--display);font-size:21px;margin:34px 0 6px">Abkürzungen ausgeschrieben</h3>' +
+    '<p style="color:var(--muted);margin:0 0 14px">Die vollständige Liste mit Erklärungen steht unter <a href="#abkuerzungen" onclick="go(\'abkuerzungen\');return false">Abkürzungen</a>.</p>' +
+    '<div class="sheet">' + abk.map(karte).join("") + "</div>" +
     '<div class="chapfoot"><button class="btn" onclick="window.print()">Seite drucken</button>' +
-    '<button class="btn" onclick="go(\'abkuerzungen\')">Abkürzungen nachschlagen</button>' +
+    '<button class="btn" onclick="go(\'abkuerzungen\')">Abkürzungen mit Erklärung</button>' +
     '<button class="btn primary" onclick="go(\'quiz\')">Wissen testen →</button></div></div>';
 }
 function viewSources(){
@@ -5585,6 +5689,7 @@ function go(id){
   else { main.innerHTML = viewStart(); heroAnim(); }
   paintNav();
   paintProgress();
+  markTabs(id);
   document.getElementById("rail").classList.remove("open");
   document.getElementById("scrim").classList.remove("on");
   try{ window.scrollTo(0, 0); }catch(e){}
