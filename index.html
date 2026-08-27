@@ -2303,6 +2303,21 @@ body:[
  {h3:"Relationale Datenbank in einem Satz"},
  {p:"Eine relationale Datenbank speichert Daten in <strong>Tabellen</strong> aus Zeilen (Datensätzen) und Spalten (Attributen). Beziehungen zwischen Tabellen entstehen nicht durch Verschachtelung, sondern durch <strong>Schlüssel</strong>: Ein Wert in Tabelle A verweist auf einen eindeutigen Wert in Tabelle B. MySQL ist das Datenbank-Managementsystem (DBMS), das diese Tabellen verwaltet — die Abfragesprache heißt SQL und ist in der Norm ISO/IEC 9075 beschrieben."},
  {box:{kind:"exam", title:"Was die Abkürzungen bedeuten", html:"<p><strong>SQL</strong> steht für <em>Structured Query Language</em>, auf Deutsch „strukturierte Abfragesprache“. Gesprochen wird sie „Es-Q-El“ oder „Sequel“ — der Vorläufer bei IBM hieß tatsächlich SEQUEL (<em>Structured English Query Language</em>) und musste aus Markenrechtsgründen umbenannt werden.</p><p><strong>MySQL</strong> ist nicht das englische „mein SQL“, sondern nach <em>My</em> benannt, der Tochter des Mitgründers Michael Widenius. <strong>MariaDB</strong>, der 2009 abgespaltene Fork, trägt den Namen seiner jüngeren Tochter Maria.</p><p><strong>DBMS</strong> heißt <em>Database Management System</em> — Datenbank-Managementsystem. Kurz gesagt: SQL ist die Sprache, MySQL das Produkt, das sie spricht. In IHK-Prüfungen wird diese Unterscheidung gern abgefragt.</p><p>Alle weiteren Kürzel dieses Lernpfads stehen im <strong>Abkürzungsverzeichnis</strong> unter „Werkzeuge“.</p>"}},
+ {h3:"Was ein DBMS leisten muss"},
+ {p:"Eine <strong>Datenbank</strong> ist zunächst nur eine geordnete Ansammlung von Daten. Erst das <strong>DBMS</strong> (Datenbank-Managementsystem) macht daraus etwas Nutzbares: Es verwaltet den Zugriff, sichert die Konsistenz und stellt eine Sprache bereit. Dabei gilt: Jede Operation gibt es sowohl für die <em>Daten</em> als auch für die <em>Struktur</em>."},
+ {table:{head:["Ebene","Abfragen","Speichern","Ändern","Löschen"], rows:[
+  ["<strong>Daten</strong> (Zeilen)","SELECT","INSERT","UPDATE","DELETE"],
+  ["<strong>Struktur</strong> (Objekte)","SHOW / DESCRIBE","CREATE","ALTER","DROP"]
+ ]}},
+ {p:"Genau diese Zweiteilung erklärt, warum es DML und DDL getrennt gibt: dieselben vier Grundoperationen, einmal auf Daten und einmal auf den Bauplan angewendet."},
+ {sql:"-- Die vier Datenoperationen an einem Beispiel\nSELECT COUNT(*) AS vorher FROM abteilung;\nINSERT INTO abteilung (id,name,standort,budget) VALUES (90,'Demo','Berlin',1000);\nUPDATE abteilung SET budget = 2000 WHERE id = 90;\nDELETE FROM abteilung WHERE id = 90;\nSELECT COUNT(*) AS nachher FROM abteilung;", label:"Beispiel: Abfragen, Speichern, Ändern, Löschen", run:true},
+ {h3:"Arten von Datenbank-Managementsystemen"},
+ {table:{head:["Art","Wie die Daten liegen","Mit SQL abfragbar?"], rows:[
+  ["<strong>RDBMS</strong><br>Relationales DBMS","in Tabellen aus Zeilen und Spalten, verknüpft über Schlüssel","<span style='color:var(--green)'>ja, mit ANSI-SQL</span> — MySQL, PostgreSQL, Oracle, SQL Server, MariaDB"],
+  ["<strong>ORDBMS</strong><br>Objektrelationales DBMS","relational, ergänzt um Objekttypen, Vererbung und benutzerdefinierte Typen","<span style='color:var(--amber)'>nicht mit reinem ANSI-SQL</span> — es braucht herstellerspezifische Erweiterungen. Beispiele: Oracle mit Objekttypen, PostgreSQL"],
+  ["<strong>NoSQL</strong><br>„Not only SQL“","als Dokumente (JSON, XML), Schlüssel-Wert-Paare, Spaltenfamilien oder Graphen","<span style='color:var(--rose)'>nein</span> — jede Datenbank bringt ihre eigene Abfragesprache mit. Beispiele: MongoDB, Redis, Cassandra, Neo4j"]
+ ]}},
+ {box:{kind:"exam", title:"Prüfungswissen", html:"<p><strong>RDBMS</strong> ist der Prüfungsstandard: Daten in Tabellen, Abfrage mit SQL. <strong>NoSQL</strong> heißt nicht „kein SQL“, sondern <em>Not only SQL</em> — der Sammelbegriff für alles, was nicht dem relationalen Modell folgt. Solche Systeme verzichten oft bewusst auf feste Schemata und ACID-Garantien, um dafür leichter über viele Server verteilt zu werden.</p><p>MySQL ist ein RDBMS, kann aber mit dem <code>JSON</code>-Datentyp auch dokumentenartige Daten aufnehmen — die Grenzen verschwimmen also in der Praxis.</p>"}},
  {h3:"Client-Server-Architektur"},
  {p:"MySQL läuft als Serverprozess (<code>mysqld</code>), der auf einem Port lauscht — standardmäßig <code>3306</code> für das klassische Protokoll und <code>33060</code> für das X-Protokoll. Clients wie <code>mysql</code> (CLI), MySQL Workbench, phpMyAdmin oder ein PHP-/Java-Programm verbinden sich, schicken SQL-Anweisungen und bekommen Ergebnismengen zurück. Der Server selbst ist mehrschichtig aufgebaut:"},
  {table:{head:["Schicht","Aufgabe"], rows:[
@@ -2323,6 +2338,7 @@ body:[
  ]}},
  {sql:"SHOW TABLES;", label:"Welche Tabellen gibt es in dieser Übungsdatenbank?", run:true},
  {sql:"DESCRIBE mitarbeiter;", label:"Struktur einer Tabelle anzeigen", run:true},
+ {sql:"-- Welche Engine nutzt eine Tabelle? (auf echtem Server)\nSHOW TABLE STATUS LIKE 'ticket';\n\n-- Engine beim Anlegen festlegen\nCREATE TABLE beispiel_engine (\n  id INT PRIMARY KEY\n) ENGINE=InnoDB;", label:"Beispiel: Storage Engine bestimmen", run:false},
  {h3:"Versionen: Was gilt 2026?"},
  {p:"Oracle veröffentlicht MySQL in zwei Spuren. <strong>LTS-Releases</strong> bekommen fünf Jahre Premier Support und ändern ihr Verhalten praktisch nicht — dafür gibt es keine neuen Funktionen. <strong>Innovation-Releases</strong> liefern quartalsweise neue Funktionen, aber jede Version wird nur bis zur nächsten gepflegt. Seit Juli 2026 tragen Innovation-Releases eine Kalenderversion im Format <code>JJ.M.P</code>."},
  {table:{head:["Version","Rolle","Bedeutung für die Praxis"], rows:[
@@ -2332,6 +2348,7 @@ body:[
   ["26.7 und folgende","Innovation","Kalenderversionierung: 26.7 = Juli 2026, danach 26.10 im Oktober."]
  ]}},
  {box:{kind:"exam", title:"Prüfungswissen", html:"<p>LTS = Long Term Support, fünf Jahre Premier plus drei Jahre Extended Support. Innovation = neueste Funktionen, kurze Pflegedauer. Beide sind produktionsreif; die Wahl ist eine Frage der Update-Bereitschaft, nicht der Qualität.</p>"}},
+ {sql:"SELECT VERSION() AS serverversion, DATABASE() AS aktuelle_datenbank;", label:"Beispiel: Version und aktuelle Datenbank abfragen", run:true},
  {h3:"Editionen und Lizenz"},
  {p:"Die <strong>Community Edition</strong> steht unter GPLv2 und ist kostenlos. Die kostenpflichtige <strong>Enterprise Edition</strong> ergänzt Werkzeuge wie Enterprise Backup, Audit-Plugin, Monitoring und Support. Wer MySQL in ein proprietäres Produkt einbettet, braucht wegen der GPL eine kommerzielle Lizenz — Betrieb als Serverdienst hinter einer Anwendung ist davon nicht betroffen."},
  {h3:"Die wichtigsten Werkzeuge"},
@@ -2367,6 +2384,7 @@ body:[
  ]}},
  {box:{kind:"warn", title:"Niemals FLOAT für Geld", html:"<p><code>0.1 + 0.2</code> ergibt in binärer Gleitkommadarstellung nicht exakt <code>0.3</code>. Bei Rechnungsbeträgen summieren sich diese Abweichungen zu echten Differenzen. <code>DECIMAL(10,2)</code> speichert den Wert dezimal exakt.</p>"}},
  {p:"<code>UNSIGNED</code> verdoppelt den positiven Bereich und verbietet negative Werte — sinnvoll für IDs und Mengen. <code>ZEROFILL</code> gilt seit 8.0 als veraltet. Die Anzeigebreite wie in <code>INT(11)</code> hat keine Auswirkung auf den Speicher und wird ebenfalls nicht mehr empfohlen."},
+ {sql:"-- Beispiel: exakt gegen ungenau\nSELECT 0.1 + 0.2 = 0.3        AS mit_dezimalzahlen,\n       ROUND(0.1 + 0.2, 2)    AS summe,\n       1234.567               AS betrag,\n       ROUND(1234.567, 2)     AS auf_cent;", label:"Beispiel: Warum DECIMAL für Geld", run:true},
  {h3:"Text"},
  {table:{head:["Typ","Eigenschaft","Einsatz"], rows:[
   ["CHAR(n)","feste Länge, wird mit Leerzeichen aufgefüllt","Länderkürzel, Hashwerte fester Länge"],
@@ -2376,6 +2394,7 @@ body:[
   ["JSON","validiertes JSON-Dokument mit eigenen Funktionen","halbstrukturierte Zusatzdaten, Konfigurationen"]
  ]}},
  {p:"Faustregel: <code>VARCHAR</code> als Standard, <code>CHAR</code> nur bei wirklich fester Länge, <code>TEXT</code> erst ab längeren Fließtexten. <code>ENUM</code> spart Platz, ist aber unflexibel — jede neue Ausprägung erfordert ein <code>ALTER TABLE</code>. Bei wachsenden Wertelisten ist eine eigene Nachschlagetabelle die bessere Wahl."},
+ {sql:"-- Beispiel: CHAR, VARCHAR und die Länge in Byte gegen Zeichen\nSELECT nachname,\n       CHAR_LENGTH(nachname) AS zeichen,\n       LENGTH(nachname)      AS byte_utf8mb4,\n       CONCAT('[', RPAD(nachname, 12, '.'), ']') AS aufgefuellt\nFROM mitarbeiter\nORDER BY zeichen DESC\nLIMIT 5;", label:"Beispiel: Textlängen sichtbar machen", run:false},
  {h3:"Datum und Zeit"},
  {table:{head:["Typ","Format","Besonderheit"], rows:[
   ["DATE","JJJJ-MM-TT","3 Byte, ohne Uhrzeit"],
@@ -2385,6 +2404,7 @@ body:[
   ["YEAR","1901–2155","1 Byte"]
  ]}},
  {box:{kind:"tip", title:"DATETIME oder TIMESTAMP?", html:"<p><code>TIMESTAMP</code> nehmen, wenn ein Moment über Zeitzonen hinweg eindeutig sein soll — etwa <code>erstellt_am</code>. <code>DATETIME</code> nehmen, wenn die lokale Zeit gemeint ist und über 2038 hinaus reichen muss — etwa ein Termin.</p>"}},
+ {sql:"-- Beispiel: Datumsbestandteile und Rechnen mit Datumswerten\nSELECT nachname,\n       eintritt,\n       YEAR(eintritt)   AS jahr,\n       MONTH(eintritt)  AS monat,\n       DATEDIFF('2026-01-01', eintritt) AS tage_dabei\nFROM mitarbeiter\nORDER BY eintritt\nLIMIT 5;", label:"Beispiel: mit DATE arbeiten", run:true},
  {h3:"Neu: JSON und VECTOR"},
  {p:"Seit MySQL 5.7 gibt es einen echten <code>JSON</code>-Typ mit Validierung und Funktionen wie <code>JSON_EXTRACT()</code> beziehungsweise dem Kurzoperator <code>-&gt;&gt;</code>. Seit MySQL 9.0 kommt <code>VECTOR</code> dazu: ein Array aus 4-Byte-Gleitkommazahlen für Embeddings und Ähnlichkeitssuche. Die Standardlänge beträgt 2048 Einträge, das Maximum 16 383. Ein VECTOR lässt sich nur auf Gleichheit vergleichen und nicht als Schlüssel verwenden."},
  {sql:"CREATE TABLE dokument (\n  id        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,\n  titel     VARCHAR(120) NOT NULL,\n  meta      JSON,\n  embedding VECTOR(768)\n);", label:"Moderne Typen im Einsatz (MySQL 9.0+)", run:false},
@@ -2410,6 +2430,18 @@ body:[
  {sql:"CREATE TABLE abteilung (\n  id       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,\n  name     VARCHAR(40)   NOT NULL UNIQUE,\n  standort VARCHAR(30)   NOT NULL DEFAULT 'Berlin',\n  budget   DECIMAL(10,2) NOT NULL CHECK (budget >= 0)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;", label:"Tabelle mit allen wichtigen Constraints", run:false},
  {fig:{t:"Abbildung 2 — Das Schema der Übungsdatenbank", svg:FIGS.er, c:"Vier Tabellen, drei Fremdschlüsselbeziehungen. Genau dieses Modell liegt allen Beispielen und Aufgaben dieses Lernpfads zugrunde."}},
  {h3:"Constraints im Überblick"},
+ {p:"Ein <strong>Constraint</strong> ist eine Regel, die die Datenbank selbst durchsetzt — unabhängig davon, welche Anwendung schreibt. In MySQL Workbench und in vielen Lehrmaterialien tauchen sie als Zweibuchstaben-Kürzel auf:"},
+ {table:{head:["Kürzel","Constraint","Deutsch","Wichtigste Regeln"], rows:[
+  ["<strong>PK</strong>","PRIMARY KEY","Primärschlüssel","nur <em>einer</em> je Tabelle · aus einer oder mehreren Spalten · verhindert Duplikate · <strong>NULL nicht erlaubt</strong>"],
+  ["<strong>UQ</strong>","UNIQUE KEY","Sekundärschlüssel / Alternativschlüssel","<em>mehrere</em> je Tabelle möglich · aus einer oder mehreren Spalten · verhindert Duplikate · <strong>NULL erlaubt, sogar mehrfach</strong>"],
+  ["<strong>FK</strong>","FOREIGN KEY","Fremdschlüssel","<em>mehrere</em> je Tabelle möglich · erzwingt, dass die Werte in der FK-Spalte in der referenzierten PK- oder UQ-Spalte vorkommen"],
+  ["<strong>NN</strong>","NOT NULL","nicht NULL","Pflichtfeld — die Spalte muss immer einen Wert enthalten"],
+  ["<strong>CH</strong>","CHECK","Bedingungsprüfung","prüft eine Bedingung <em>innerhalb einer Zeile</em>, etwa <code>CHECK (bis &gt;= von)</code> · in MySQL erst ab 8.0.16 wirksam"],
+  ["<strong>DF</strong>","DEFAULT","Vorgabewert","setzt einen Wert, wenn beim INSERT keiner angegeben wird"],
+  ["<strong>AI</strong>","AUTO_INCREMENT","automatische Nummerierung","vergibt fortlaufende Zahlen · nur eine Spalte je Tabelle · muss indiziert sein"]
+ ]}},
+ {box:{kind:"exam", title:"PK gegen UQ — die klassische Prüfungsfrage", html:"<p>Beide verhindern Duplikate und legen automatisch einen Index an. Zwei Unterschiede zählen:</p><ul><li><strong>Anzahl:</strong> Primärschlüssel genau einer je Tabelle, UNIQUE beliebig viele.</li><li><strong>NULL:</strong> Der Primärschlüssel verbietet NULL, UNIQUE erlaubt es — und zwar mehrfach, weil zwei unbekannte Werte nicht als gleich gelten.</li></ul><p>Deshalb heißt UNIQUE auch <em>Sekundär-</em> oder <em>Alternativschlüssel</em>: Es sind die Schlüsselkandidaten, die nicht Primärschlüssel geworden sind.</p>"}},
+ {box:{kind:"", title:"Was NULL bedeutet", html:"<p><code>NULL</code> ist <strong>keine Angabe</strong> oder <strong>undefiniert</strong> — nicht die Zahl 0 und nicht der leere Text <code>''</code>. Ein Gehalt von 0 heißt „verdient nichts“, ein Gehalt von NULL heißt „wir wissen es nicht“. Deshalb ergibt jeder Vergleich mit NULL wieder NULL, und nur <code>IS NULL</code> beziehungsweise <code>IS NOT NULL</code> funktioniert.</p>"}},
  {table:{head:["Constraint","Wirkung"], rows:[
   ["PRIMARY KEY","Eindeutig und nicht NULL. Genau einer pro Tabelle, legt in InnoDB die physische Sortierung fest."],
   ["FOREIGN KEY","Verweist auf einen Schlüssel einer anderen Tabelle und sichert referenzielle Integrität."],
@@ -2418,6 +2450,9 @@ body:[
   ["DEFAULT","Setzt einen Wert, wenn beim INSERT keiner angegeben wird."],
   ["CHECK","Prüft eine Bedingung. Wird seit MySQL 8.0.16 tatsächlich durchgesetzt — vorher stillschweigend ignoriert."]
  ]}},
+ {sql:"-- Alle Constraint-Arten in einer Tabelle\nCREATE TABLE projekt (\n  id        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,   -- PK + AI\n  kuerzel   CHAR(6)      NOT NULL UNIQUE,                -- NN + UQ\n  titel     VARCHAR(80)  NOT NULL,                       -- NN\n  leiter_id INT UNSIGNED NULL,                           -- NULL erlaubt\n  start_am  DATE         NOT NULL,\n  ende_am   DATE         NULL,\n  status    VARCHAR(12)  NOT NULL DEFAULT 'geplant',     -- DF\n  CONSTRAINT fk_projekt_leiter\n    FOREIGN KEY (leiter_id) REFERENCES mitarbeiter(id)   -- FK\n    ON DELETE SET NULL,\n  CONSTRAINT ch_projekt_zeitraum\n    CHECK (ende_am IS NULL OR ende_am >= start_am)       -- CH\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;", label:"PK, UQ, FK, NN, CH, DF und AI in einer Anweisung", run:false},
+ {sql:"-- Beispiel zum Mitmachen: Tabelle anlegen, prüfen, wieder entfernen\nCREATE TABLE kunde (\n  id    INT PRIMARY KEY,\n  firma VARCHAR(60) NOT NULL,\n  ort   VARCHAR(40) DEFAULT 'Berlin'\n);\n\nINSERT INTO kunde (id, firma) VALUES (1,'Meier GmbH'), (2,'Schulz AG');\n\nDESCRIBE kunde;", label:"Beispiel: eine Tabelle entsteht", run:true},
+ {sql:"SELECT * FROM kunde;\nDROP TABLE kunde;", label:"Beispiel: Inhalt ansehen und aufräumen", run:true},
  {h3:"Fremdschlüssel und referenzielle Integrität"},
  {sql:"CREATE TABLE mitarbeiter (\n  id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,\n  vorname      VARCHAR(40) NOT NULL,\n  nachname     VARCHAR(40) NOT NULL,\n  abteilung_id INT UNSIGNED NULL,\n  eintritt     DATE NOT NULL,\n  gehalt       DECIMAL(8,2) NOT NULL,\n  CONSTRAINT fk_mitarbeiter_abteilung\n    FOREIGN KEY (abteilung_id) REFERENCES abteilung(id)\n    ON DELETE SET NULL\n    ON UPDATE CASCADE\n) ENGINE=InnoDB;", label:"Fremdschlüssel mit Referenzaktionen", run:false},
  {table:{head:["Referenzaktion","Verhalten beim Löschen des Elternsatzes"], rows:[
@@ -2426,8 +2461,12 @@ body:[
   ["SET NULL","Fremdschlüsselspalte wird auf NULL gesetzt — Spalte muss NULL erlauben."]
  ]}},
  {box:{kind:"warn", title:"Voraussetzungen für Fremdschlüssel", html:"<p>Beide Tabellen müssen InnoDB verwenden, die Datentypen müssen exakt zusammenpassen (auch <code>UNSIGNED</code>!), und die referenzierte Spalte braucht einen Index. MyISAM akzeptiert die Syntax, ignoriert die Regel aber vollständig.</p>"}},
+ {sql:"-- Beispiel: Was ein Constraint verhindert\nDROP TABLE IF EXISTS test_pk;\nCREATE TABLE test_pk (id INT PRIMARY KEY, name VARCHAR(20) NOT NULL);\nINSERT INTO test_pk VALUES (1, 'erster');\nINSERT INTO test_pk VALUES (1, 'zweiter');   -- schlägt fehl: Duplicate entry", label:"Beispiel: PRIMARY KEY in Aktion", run:true, err:true},
+ {sql:"SELECT * FROM test_pk;\nDROP TABLE test_pk;", label:"Beispiel: nur die erste Zeile ist drin (bitte das Beispiel darüber zuerst ausführen)", run:true},
  {h3:"AUTO_INCREMENT"},
  {p:"<code>AUTO_INCREMENT</code> vergibt automatisch fortlaufende Zahlen. Gelöschte Werte werden nicht wiederverwendet, und nach einem Rollback bleibt die Lücke bestehen — Lückenlosigkeit ist ausdrücklich nicht zugesichert. Pro Tabelle ist genau eine solche Spalte erlaubt, und sie muss indiziert sein."},
+ {sql:"-- Beispiel: AUTO_INCREMENT vergibt selbst\nCREATE TABLE nummern (id INT AUTO_INCREMENT PRIMARY KEY, wert VARCHAR(20));\nINSERT INTO nummern (wert) VALUES ('a'), ('b'), ('c');\nDELETE FROM nummern WHERE wert = 'b';\nINSERT INTO nummern (wert) VALUES ('d');\nSELECT * FROM nummern;   -- die 2 bleibt eine Lücke", label:"Beispiel: Lücken bei AUTO_INCREMENT", run:true},
+ {sql:"DROP TABLE nummern;", label:"Aufräumen", run:true},
  {h3:"Struktur ändern"},
  {sql:"ALTER TABLE mitarbeiter ADD COLUMN telefon VARCHAR(30) NULL AFTER nachname;\nALTER TABLE mitarbeiter MODIFY COLUMN gehalt DECIMAL(9,2) NOT NULL;\nALTER TABLE mitarbeiter CHANGE COLUMN telefon durchwahl VARCHAR(20);\nALTER TABLE mitarbeiter DROP COLUMN durchwahl;\nALTER TABLE mitarbeiter ADD INDEX idx_nachname (nachname);", label:"Die fünf ALTER-Varianten, die man ständig braucht", run:false},
  {box:{kind:"tip", title:"MODIFY oder CHANGE?", html:"<p><code>MODIFY</code> ändert nur die Definition, <code>CHANGE</code> zusätzlich den Spaltennamen — verlangt dafür aber die vollständige Neudefinition der Spalte. Wer nur umbenennen will, nimmt <code>RENAME COLUMN alt TO neu</code> (ab MySQL 8.0).</p>"}},
@@ -2437,7 +2476,8 @@ body:[
   ["TRUNCATE TABLE t","leert die Tabelle, setzt AUTO_INCREMENT zurück","nein, DDL"],
   ["DROP TABLE t","entfernt Daten und Struktur","nein, DDL"]
  ]}},
- {sql:"CREATE TABLE lieferant (\n  id INT PRIMARY KEY,\n  firma VARCHAR(60) NOT NULL,\n  ort VARCHAR(40) DEFAULT 'Berlin'\n);\nINSERT INTO lieferant (id, firma) VALUES (1,'Kabel & Co'),(2,'ServerTeile GmbH');\nSELECT * FROM lieferant;", label:"Selbst ausprobieren: Tabelle anlegen und füllen", run:true}
+ {sql:"DROP TABLE IF EXISTS lieferant;\n\nCREATE TABLE lieferant (\n  id INT PRIMARY KEY,\n  firma VARCHAR(60) NOT NULL,\n  ort VARCHAR(40) DEFAULT 'Berlin'\n);\nINSERT INTO lieferant (id, firma) VALUES (1,'Kabel & Co'),(2,'ServerTeile GmbH');\nSELECT * FROM lieferant;", label:"Selbst ausprobieren: Tabelle anlegen und füllen", run:true},
+ {sql:"DROP TABLE lieferant;", label:"Aufräumen", run:true}
 ],
 tasks:[
  {q:"Lege eine Tabelle <code>standort</code> mit den Spalten <code>id</code> (INT, Primärschlüssel), <code>stadt</code> (VARCHAR(40), NOT NULL) und <code>plz</code> (CHAR(5)) an.", solution:"CREATE TABLE standort (id INT PRIMARY KEY, stadt VARCHAR(40) NOT NULL, plz CHAR(5));", ddl:true},
@@ -2537,6 +2577,20 @@ id:"sqlfamilien", num:"03", title:"SQL im Überblick — die fünf Sprachfamilie
 kicker:"Kapitel 03 · Die Sprache",
 lead:"SQL ist nicht eine Sprache, sondern fünf Teilsprachen unter einem Dach. Wer weiß, wozu eine Anweisung gehört, weiß auch, ob sie zurückrollbar ist, welche Rechte sie braucht und wo sie in der Prüfung einsortiert wird.",
 body:[
+ {h3:"SQL folgt dem englischen Satzbau"},
+ {p:"SQL wurde bewusst so entworfen, dass eine Abfrage wie ein englischer Satz gelesen werden kann. Wer die Aufgabenstellung in einen Satz übersetzt, hat die Abfrage fast schon geschrieben:"},
+ {html:"<div class='box tip' style='border-left-color:var(--teal)'><div class='t' style='color:var(--teal)'>Von der Aufgabe zur Abfrage</div><p style='margin-bottom:10px'><em>„Zeige Vorname und Nachname aller Mitarbeiter an.“</em></p><table style='width:100%;border-collapse:collapse;font-size:14.5px'><tr><td style='padding:4px 10px 4px 0;color:var(--muted)'>Vorname, Nachname</td><td style='padding:4px 0'>= die <strong>Spalten</strong> → gehören hinter <code>SELECT</code></td></tr><tr><td style='padding:4px 10px 4px 0;color:var(--muted)'>Mitarbeiter</td><td style='padding:4px 0'>= die <strong>Tabelle</strong> → gehört hinter <code>FROM</code></td></tr></table></div>"},
+ {sql:"SELECT\n      vorname\n    , nachname\nFROM\n    mitarbeiter;", label:"Dieselbe Aussage als SQL", run:true},
+ {p:"Die Kommas am Zeilenanfang sind eine verbreitete Schreibweise: Wird eine Spalte ergänzt oder entfernt, muss nie ein Komma an einer anderen Zeile nachgezogen werden. Zwingend ist das nicht — SQL erlaubt jede Formatierung."},
+ {table:{head:["Frage in Worten","Klausel"], rows:[
+  ["<em>Was</em> soll angezeigt werden?","SELECT"],
+  ["<em>Woher</em> stammen die Daten?","FROM"],
+  ["<em>Welche</em> Zeilen sollen es sein?","WHERE"],
+  ["<em>Wonach</em> gruppieren?","GROUP BY"],
+  ["<em>Welche</em> Gruppen behalten?","HAVING"],
+  ["<em>In welcher Reihenfolge</em>?","ORDER BY"],
+  ["<em>Wie viele</em>?","LIMIT"]
+ ]}},
  {h3:"Standard und Dialekt"},
  {p:"SQL ist in der Norm <strong>ISO/IEC 9075</strong> beschrieben. Jedes Datenbanksystem setzt davon einen Kern um und ergänzt eigene Erweiterungen — deshalb läuft eine Abfrage aus einem Oracle-Lehrbuch nicht zwangsläufig in MySQL. Der gemeinsame Kern ist groß genug, dass sich Kenntnisse übertragen lassen; die Abweichungen betreffen vor allem Begrenzung, Bezeichner und Funktionsnamen."},
  {p:"Traditionell wird SQL in Teilsprachen gegliedert. Die Namen sind keine Norm, sondern Lehrbuchkonvention — in Prüfungen werden sie aber genau so abgefragt. Alle enden auf <em>Language</em>, unterscheiden sich also nur im ersten Buchstaben: <strong>D</strong>efinition, <strong>M</strong>anipulation, <strong>Q</strong>uery, <strong>C</strong>ontrol:"},
@@ -2614,9 +2668,10 @@ body:[
  {h3:"Anatomie einer Anweisung"},
  {p:"Jede SQL-Anweisung besteht aus <strong>Klauseln</strong> (<code>SELECT …</code>, <code>FROM …</code>, <code>WHERE …</code>), die wiederum <strong>Ausdrücke</strong> und <strong>Prädikate</strong> enthalten. Ein Prädikat ist eine Bedingung, die wahr, falsch oder unbekannt ergibt — die dritte Möglichkeit gibt es nur wegen NULL."},
  {table:{head:["Schreibweise","Regel in MySQL"], rows:[
-  ["Semikolon","trennt Anweisungen; im Client Pflicht, in vielen Konnektoren optional"],
+  ["Semikolon","<strong>beendet</strong> jede Anweisung; im CLI-Client Pflicht, in vielen Konnektoren optional"],
   ["Kommentare","<code>-- Text</code> (mit Leerzeichen danach!), <code>#&nbsp;Text</code> und <code>/* … */</code>"],
-  ["Schlüsselwörter","Groß-/Kleinschreibung egal; Konvention: Schlüsselwörter groß, Bezeichner klein"],
+  ["Schlüsselwörter","<strong>nicht case-sensitiv</strong>: <code>select</code>, <code>SELECT</code> und <code>SeLeCt</code> sind gleichwertig. Konvention: Schlüsselwörter groß, Bezeichner klein"],
+  ["Formatierung","frei mit Leerzeichen, Tabulatoren und Zeilenumbrüchen (<em>Whitespace</em>) gestaltbar — die Engine ignoriert sie vollständig"],
   ["Bezeichner","in Backticks einfassen, wenn sie ein reserviertes Wort sind: <code>`order`</code>"],
   ["Zeichenketten","einfache Anführungszeichen. Doppelte funktionieren, bedeuten im SQL-Modus ANSI_QUOTES aber Bezeichner"],
   ["Tabellennamen","unter Linux standardmäßig <em>case-sensitive</em>, unter Windows und macOS nicht — gesteuert über <code>lower_case_table_names</code>"]
@@ -2881,6 +2936,7 @@ lead:"Nicht jede Regel gehört in die Anwendung. Views vereinfachen wiederkehren
 body:[
  {h3:"Views"},
  {sql:"DROP VIEW IF EXISTS v_abteilungsuebersicht;\n\nCREATE VIEW v_abteilungsuebersicht AS\nSELECT a.id,\n       a.name,\n       a.standort,\n       COUNT(m.id)             AS mitarbeiter,\n       ROUND(AVG(m.gehalt), 2) AS schnittgehalt\nFROM abteilung a\nLEFT JOIN mitarbeiter m ON m.abteilung_id = a.id\nGROUP BY a.id, a.name, a.standort;\n\nSELECT * FROM v_abteilungsuebersicht WHERE mitarbeiter > 2;", label:"Gespeicherte Abfrage als virtuelle Tabelle", run:true},
+ {sql:"DROP VIEW v_abteilungsuebersicht;", label:"Aufräumen", run:true},
  {p:"Eine View speichert keine Daten, sondern die Abfrage. Sie wird bei jedem Zugriff neu ausgewertet und liefert damit immer den aktuellen Stand. Ihr Nutzen: komplexe Joins einmal formulieren, Spalten mit sensiblen Daten ausblenden und Rechte gezielt auf die View statt auf die Basistabellen vergeben. Materialisierte Views wie in Oracle oder PostgreSQL kennt MySQL nicht — sie werden bei Bedarf über eine Tabelle plus Event nachgebaut."},
  {table:{head:["Eigenschaft","Verhalten"], rows:[
   ["Aktualisierbar","Einfache Views ohne GROUP BY, DISTINCT, UNION oder Aggregate erlauben INSERT und UPDATE"],
@@ -2888,10 +2944,14 @@ body:[
   ["ALGORITHM=MERGE","View wird in die äußere Abfrage eingebettet — meist die schnellste Variante"],
   ["ALGORITHM=TEMPTABLE","Ergebnis wird zwischengespeichert; nötig bei Aggregaten"]
  ]}},
+ {sql:"-- Beispiel: View anlegen und wie eine Tabelle nutzen\nDROP VIEW IF EXISTS v_offene_tickets;\n\nCREATE VIEW v_offene_tickets AS\nSELECT t.id, t.titel, t.prioritaet, m.nachname AS melder\nFROM ticket t\nJOIN mitarbeiter m ON t.mitarbeiter_id = m.id\nWHERE t.status <> 'geschlossen';\n\nSELECT * FROM v_offene_tickets ORDER BY prioritaet;", label:"Beispiel: View für offene Tickets", run:true},
+ {sql:"-- Beispiel: die View lässt sich weiter einschränken und gruppieren\nSELECT prioritaet, COUNT(*) AS anzahl\nFROM v_offene_tickets\nGROUP BY prioritaet\nORDER BY anzahl DESC;", label:"Beispiel: auf einer View aufbauen", run:true},
+ {sql:"DESCRIBE v_offene_tickets;\nDROP VIEW v_offene_tickets;", label:"Beispiel: Struktur ansehen und aufräumen", run:true},
  {h3:"Stored Procedures"},
  {sql:"DELIMITER //\nCREATE PROCEDURE gehalt_erhoehen(\n  IN  p_abteilung INT,\n  IN  p_prozent   DECIMAL(5,2),\n  OUT p_anzahl    INT\n)\nBEGIN\n  UPDATE mitarbeiter\n     SET gehalt = gehalt * (1 + p_prozent/100)\n   WHERE abteilung_id = p_abteilung;\n\n  SET p_anzahl = ROW_COUNT();\nEND //\nDELIMITER ;\n\nCALL gehalt_erhoehen(2, 3.5, @betroffen);\nSELECT @betroffen;", label:"Prozedur mit IN- und OUT-Parameter", run:false},
  {p:"<code>DELIMITER //</code> stellt das Anweisungstrennzeichen vorübergehend um, damit die Semikolons im Rumpf nicht als Ende der CREATE-Anweisung gelesen werden. Es ist ein Befehl des <em>Clients</em>, kein SQL — in einem Programm, das die Anweisung als Ganzes schickt, entfällt er. Parameter gibt es als <code>IN</code> (Standard), <code>OUT</code> und <code>INOUT</code>. Prozeduren liefern Ergebnismengen, Funktionen dagegen genau einen Rückgabewert und dürfen in Ausdrücken stehen."},
  {sql:"DELIMITER //\nCREATE FUNCTION betriebszugehoerigkeit(p_eintritt DATE)\nRETURNS INT\nDETERMINISTIC\nBEGIN\n  RETURN TIMESTAMPDIFF(YEAR, p_eintritt, CURDATE());\nEND //\nDELIMITER ;\n\nSELECT nachname, betriebszugehoerigkeit(eintritt) AS jahre FROM mitarbeiter;", label:"Gespeicherte Funktion", run:false},
+ {sql:"-- Beispiel: was eine Funktion berechnen würde — hier direkt als Ausdruck\nSELECT nachname,\n       eintritt,\n       FLOOR(DATEDIFF('2026-01-01', eintritt) / 365) AS jahre_dabei,\n       CASE WHEN DATEDIFF('2026-01-01', eintritt) / 365 >= 10 THEN 'Jubilar' ELSE '—' END AS hinweis\nFROM mitarbeiter\nORDER BY jahre_dabei DESC\nLIMIT 6;", label:"Beispiel: Logik einer gespeicherten Funktion nachvollzogen", run:true},
  {h3:"Trigger"},
  {sql:"CREATE TABLE gehalt_log (\n  id        INT AUTO_INCREMENT PRIMARY KEY,\n  mitarbeiter_id INT NOT NULL,\n  alt       DECIMAL(8,2),\n  neu       DECIMAL(8,2),\n  geaendert TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n);\n\nDELIMITER //\nCREATE TRIGGER trg_gehalt_update\nAFTER UPDATE ON mitarbeiter\nFOR EACH ROW\nBEGIN\n  IF OLD.gehalt <> NEW.gehalt THEN\n    INSERT INTO gehalt_log (mitarbeiter_id, alt, neu)\n    VALUES (OLD.id, OLD.gehalt, NEW.gehalt);\n  END IF;\nEND //\nDELIMITER ;", label:"Änderungen automatisch protokollieren", run:false},
  {p:"Trigger feuern <code>BEFORE</code> oder <code>AFTER</code> bei <code>INSERT</code>, <code>UPDATE</code> oder <code>DELETE</code> und laufen <code>FOR EACH ROW</code>. Über <code>OLD.</code> und <code>NEW.</code> stehen die Werte vor und nach der Änderung bereit — beim INSERT gibt es nur NEW, beim DELETE nur OLD. In einem BEFORE-Trigger lassen sich Werte in <code>NEW.</code> noch verändern, etwa zum Normalisieren von Eingaben."},
@@ -2943,6 +3003,9 @@ body:[
   ["Änderungsanomalie","Der Abteilungsname müsste in 40 Zeilen gleichzeitig geändert werden — eine vergessene Zeile erzeugt Widersprüche"],
   ["Löschanomalie","Mit dem letzten Mitarbeiter verschwindet auch die Information über die Abteilung"]
  ]}},
+ {sql:"-- Beispiel: So sähe die unnormalisierte Tabelle aus\nCREATE TABLE unnorm (\n  mit_nr   INT,\n  name     VARCHAR(40),\n  abteilung VARCHAR(40),\n  abt_leiter VARCHAR(40),\n  geraete  VARCHAR(120)\n);\n\nINSERT INTO unnorm VALUES\n  (1,'Brandt','IT-Systeme','Wagner','ThinkPad T14, U2723QE'),\n  (2,'Yildiz','IT-Systeme','Wagner','Latitude 5540'),\n  (3,'Kern','Softwareentwicklung','Peters','MacBook Pro 14');\n\nSELECT * FROM unnorm;", label:"Beispiel: die Ausgangslage mit allen drei Verstößen", run:true},
+ {sql:"-- Die Redundanz sichtbar machen: derselbe Leiter steht mehrfach da\nSELECT abteilung, abt_leiter, COUNT(*) AS wie_oft_wiederholt\nFROM unnorm\nGROUP BY abteilung, abt_leiter;", label:"Beispiel: Redundanz zählen", run:true},
+ {sql:"DROP TABLE unnorm;", label:"Aufräumen", run:true},
  {h3:"Die Normalformen"},
  {h4:"Ausgangslage: unnormalisiert"},
  {html:"<div class='tblscroll'><table class='grid'><tr><th>mit_nr</th><th>name</th><th>abteilung</th><th>abt_leiter</th><th>geraete</th></tr><tr><td>1</td><td>Brandt</td><td>IT-Systeme</td><td>Wagner</td><td>ThinkPad T14, U2723QE</td></tr><tr><td>2</td><td>Yildiz</td><td>IT-Systeme</td><td>Wagner</td><td>Latitude 5540</td></tr></table></div>"},
@@ -2960,6 +3023,7 @@ body:[
  {box:{kind:"warn", title:"Drei häufige Irrtümer", html:"<ol><li><strong>„1NF heißt: hängt vom Schlüssel ab.“</strong> Nein — 1NF fordert ausschließlich atomare Werte ohne Wiederholungsgruppen.</li><li><strong>„Nichtschlüsselattribut = alles außer dem Primärschlüssel.“</strong> Maßgeblich sind die <em>Nichtprimärattribute</em>, also Attribute, die in keinem Schlüsselkandidaten vorkommen.</li><li><strong>„2NF muss man immer prüfen.“</strong> Bei einem einteiligen Schlüssel ist sie automatisch erfüllt; interessant wird sie erst bei zusammengesetzten Schlüsseln.</li></ol>"}},
  {h4:"Boyce-Codd-Normalform und darüber hinaus"},
  {p:"Die BCNF verschärft die 3NF: Bei <em>jeder</em> nichttrivialen Abhängigkeit <code>X → Y</code> muss <code>X</code> ein Superschlüssel sein — die 3NF lässt hier noch eine Ausnahme zu, wenn das abhängige Attribut selbst ein Primärattribut ist. Relevant wird der Unterschied nur bei mehreren, sich überlappenden Schlüsselkandidaten. Die 4NF beseitigt mehrwertige Abhängigkeiten, die 5NF Verbundabhängigkeiten. Für die Praxis und die IHK-Prüfung endet die Reise in aller Regel bei der 3NF."},
+ {sql:"-- Beispiel: 1:n auflösen — das normalisierte Modell in Aktion\nSELECT a.name AS abteilung, m.nachname AS mitarbeiter\nFROM abteilung a\nJOIN mitarbeiter m ON m.abteilung_id = a.id\nORDER BY a.name, m.nachname;", label:"Beispiel: Der Abteilungsname steht nur einmal — im JOIN zusammengeführt", run:true},
  {h3:"Denormalisierung"},
  {p:"Jede Normalisierungsstufe kostet Joins und damit Lesezeit. In auswertungslastigen Systemen wird deshalb bewusst denormalisiert: redundante Spalten, vorberechnete Summen, Reporting-Tabellen. Das ist eine begründete Abwägung, kein Rückschritt — aber nur sinnvoll, wenn ein Messwert das Problem belegt und die Redundanz kontrolliert gepflegt wird."},
  {sql:"SELECT a.name AS abteilung,\n       COUNT(DISTINCT m.id) AS mitarbeiter,\n       COUNT(DISTINCT g.id) AS geraete,\n       COUNT(DISTINCT t.id) AS tickets\nFROM abteilung a\nLEFT JOIN mitarbeiter m ON m.abteilung_id = a.id\nLEFT JOIN geraet     g ON g.mitarbeiter_id = m.id\nLEFT JOIN ticket     t ON t.mitarbeiter_id = m.id\nGROUP BY a.id, a.name\nORDER BY mitarbeiter DESC;", label:"Das normalisierte Modell in Aktion", run:true},
@@ -3164,7 +3228,13 @@ body:[
   ["<code>ROLLBACK TO name</code>","nimmt nur die Schritte nach der Marke zurück, die Transaktion bleibt offen"],
   ["<code>RELEASE SAVEPOINT name</code>","verwirft die Marke, ohne etwas zurückzunehmen"]
  ]}},
- {box:{kind:"warn", title:"Implizites COMMIT — die häufigste Überraschung", html:"<p>Bestimmte Anweisungen beenden eine offene Transaktion automatisch. Ein <code>ROLLBACK</code> danach greift ins Leere:</p><ul><li>alle DDL-Anweisungen: <code>CREATE</code>, <code>ALTER</code>, <code>DROP</code>, <code>TRUNCATE</code>, <code>RENAME</code></li><li>alle DCL-Anweisungen: <code>GRANT</code>, <code>REVOKE</code>, <code>CREATE USER</code>, <code>SET PASSWORD</code></li><li><code>LOCK TABLES</code>, <code>UNLOCK TABLES</code>, <code>START TRANSACTION</code>, <code>SET autocommit = 1</code></li><li><code>LOAD DATA</code> in manchen Konstellationen</li></ul><p>Deshalb gehören Strukturänderungen niemals mitten in eine Transaktion.</p>"}},
+ {h3:"Was in einer Transaktion stehen darf"},
+ {p:"Innerhalb einer Transaktion sind nur <strong>DQL- und DML-Anweisungen</strong> sinnvoll — also Lesen und Datenänderungen. Genau diese lassen sich mit <code>ROLLBACK</code> zurücknehmen. Alles andere beendet die Transaktion vorzeitig durch ein <strong>implizites COMMIT</strong>."},
+ {html:"<div class='tblscroll' style='margin:0 0 22px'><table class='grid' style='font-family:var(--body);font-size:14.5px'><thead><tr><th style='width:50%'>✓ Erlaubt und zurückrollbar</th><th>✗ Löst automatisch COMMIT aus</th></tr></thead><tbody><tr><td style='white-space:normal;color:var(--green)'><strong>DML</strong> — Daten ändern<br><code>INSERT</code> · <code>UPDATE</code> · <code>DELETE</code> · <code>REPLACE</code></td><td style='white-space:normal;color:var(--rose)'><strong>DDL</strong> — Struktur ändern<br><code>CREATE</code> · <code>ALTER</code> · <code>DROP</code> · <code>TRUNCATE</code> · <code>RENAME</code></td></tr><tr><td style='white-space:normal;color:var(--green)'><strong>DQL</strong> — lesen<br><code>SELECT</code> · <code>TABLE</code> · <code>VALUES</code></td><td style='white-space:normal;color:var(--rose)'><strong>DCL</strong> — Rechte<br><code>GRANT</code> · <code>REVOKE</code> · <code>CREATE USER</code> · <code>SET PASSWORD</code></td></tr><tr><td style='white-space:normal;color:var(--green)'><strong>TCL</strong> — Steuerung<br><code>SAVEPOINT</code> · <code>ROLLBACK TO</code> · <code>RELEASE SAVEPOINT</code></td><td style='white-space:normal;color:var(--rose)'><strong>Sperren und Sitzung</strong><br><code>LOCK TABLES</code> · <code>UNLOCK TABLES</code> · <code>SET autocommit = 1</code> · erneutes <code>START TRANSACTION</code></td></tr><tr><td style='white-space:normal;color:var(--muted)'><code>LOAD DATA</code> — je nach Konstellation, im Zweifel wie DDL behandeln</td><td style='white-space:normal;color:var(--rose)'><strong>Verwaltung</strong><br><code>ANALYZE</code> · <code>OPTIMIZE</code> · <code>REPAIR TABLE</code> · <code>FLUSH</code> · <code>RESET</code></td></tr></tbody></table></div>"},
+ {box:{kind:"exam", title:"Die Merkregel in einem Satz", html:"<p><strong>Nur DQL und DML lassen sich zurückrollen — alles, was die Struktur, die Rechte oder den Server verändert, committet sofort.</strong></p><p>Anders gesagt: Was <em>Daten</em> anfasst, ist Teil der Transaktion. Was den <em>Bauplan</em> oder die <em>Zugänge</em> anfasst, beendet sie. Ein <code>ROLLBACK</code> nach einem <code>CREATE TABLE</code> greift deshalb ins Leere — und nimmt auch die davor liegenden DML-Anweisungen nicht mehr zurück, weil die längst bestätigt sind.</p>"}},
+ {sql:"START TRANSACTION;\n  UPDATE abteilung SET budget = 99 WHERE id = 5;   -- DML: zurückrollbar\n  CREATE TABLE tmp_beispiel (a INT);              -- DDL: COMMIT passiert HIER\nROLLBACK;                                          -- greift ins Leere\n\nSELECT id, budget FROM abteilung WHERE id = 5;    -- 99 steht dauerhaft drin", label:"Selbst ausprobieren: das implizite COMMIT in Aktion", run:true},
+ {sql:"DROP TABLE tmp_beispiel;\nUPDATE abteilung SET budget = 42000 WHERE id = 5;", label:"Aufräumen und ursprünglichen Wert wiederherstellen", run:true},
+ {box:{kind:"warn", title:"Vorsicht bei Listen aus anderen Datenbanksystemen", html:"<p>In Lehrmaterialien taucht in dieser Aufzählung häufig auch <code>MERGE</code> auf. Diese Anweisung gehört zum SQL-Standard und existiert in Oracle, SQL Server und DB2 — <strong>in MySQL gibt es sie nicht</strong>. Das MySQL-Gegenstück zum Upsert heißt <code>INSERT … ON DUPLICATE KEY UPDATE</code>.</p><p>Ebenso ist <code>SAVEPOINT</code> keine DML-Anweisung, sondern gehört zur TCL — es steuert die Transaktion, statt Daten zu verändern. Wer die Liste in einer Prüfung reproduzieren muss, sollte wissen, welches System gemeint ist.</p>"}},
  {h3:"Transaktionen im Terminal ausprobieren"},
  {p:"Der Ablauf lässt sich mit zwei Terminalfenstern nachstellen — genau so, wie man es in der Praxis debuggt. Fenster A hält eine Sperre, Fenster B läuft dagegen."},
  {sql:"# ── Fenster A ───────────────────────────────\nmysql -u root -p it_betrieb\n\nmysql> START TRANSACTION;\nmysql> UPDATE abteilung SET budget = 1 WHERE id = 1;\nmysql> -- noch KEIN COMMIT: die Zeile ist jetzt gesperrt\n\n# ── Fenster B ───────────────────────────────\nmysql -u root -p it_betrieb\n\nmysql> UPDATE abteilung SET budget = 2 WHERE id = 1;\n-- hängt und wartet, weil A die Zeile hält …\n\n# ── Fenster A ───────────────────────────────\nmysql> ROLLBACK;      -- Sperre frei: B läuft jetzt sofort durch\n\n# Passiert in Fenster A dagegen 50 Sekunden lang nichts,\n# bricht B von selbst ab:\n-- ERROR 1205 (HY000): Lock wait timeout exceeded; try restarting transaction", label:"Sperren live beobachten", run:false},
@@ -3297,9 +3367,13 @@ body:[
   ["<code>GRANT OPTION</code>","eigene Rechte an andere weitergeben"]
  ]}},
  {box:{kind:"exam", title:"Prinzip der geringsten Rechte", html:"<p>Ein Webanwendungskonto braucht in aller Regel genau <code>SELECT, INSERT, UPDATE, DELETE</code> auf <em>einer</em> Datenbank — kein <code>DROP</code>, kein <code>GRANT OPTION</code>, kein <code>FILE</code>, keine globalen Rechte. Damit richtet eine erfolgreiche SQL-Injection erheblich weniger Schaden an: Sie kann Daten lesen und ändern, aber keine Tabellen löschen, keine Dateien schreiben und keine neuen Konten anlegen.</p>"}},
+ {sql:"-- Beispiel: Was ein Konto mit GRANT SELECT (id, vorname, nachname) sehen darf\nSELECT id, vorname, nachname FROM mitarbeiter;", label:"Beispiel: spaltenbezogene Leseberechtigung", run:true},
+ {sql:"-- Beispiel: dieselbe Tabelle für ein Konto MIT Gehaltsrecht\nSELECT id, vorname, nachname, gehalt FROM mitarbeiter ORDER BY gehalt DESC LIMIT 5;", label:"Beispiel: mit vollem Leserecht", run:true},
  {h3:"Rollen statt Einzelrechte"},
  {sql:"-- Rollen anlegen und mit Rechten füllen\nCREATE ROLE 'r_lesen', 'r_schreiben', 'r_entwickler';\n\nGRANT SELECT                         ON it_betrieb.* TO 'r_lesen';\nGRANT INSERT, UPDATE, DELETE         ON it_betrieb.* TO 'r_schreiben';\nGRANT CREATE, ALTER, DROP, INDEX     ON it_betrieb.* TO 'r_entwickler';\n\n-- Rollen an Konten vergeben\nGRANT 'r_lesen', 'r_schreiben' TO 'app_web'@'10.0.0.%';\nGRANT 'r_lesen'                TO 'report'@'localhost';\n\n-- Rollen beim Anmelden automatisch aktivieren (sonst sind sie inaktiv!)\nSET DEFAULT ROLE ALL TO 'app_web'@'10.0.0.%';\n\n-- Prüfen\nSHOW GRANTS FOR 'app_web'@'10.0.0.%' USING 'r_lesen', 'r_schreiben';\nSELECT CURRENT_ROLE();", label:"Rollen ab MySQL 8.0", run:false},
  {box:{kind:"warn", title:"Die häufigste Rollen-Falle", html:"<p>Eine zugewiesene Rolle ist nach dem Anmelden zunächst <strong>inaktiv</strong>. Ohne <code>SET DEFAULT ROLE ALL</code> — oder ein <code>SET ROLE</code> in jeder Sitzung — hat das Konto trotz vergebener Rolle keinerlei Rechte. Das führt regelmäßig zu ratlosen Fehlersuchen.</p>"}},
+ {sql:"-- Beispiel: eine View als Rechtefilter — das Auswertungskonto sieht nur Zahlen\nDROP VIEW IF EXISTS v_personalstatistik;\n\nCREATE VIEW v_personalstatistik AS\nSELECT abteilung_id,\n       COUNT(*)               AS mitarbeiter,\n       ROUND(AVG(gehalt), 2)  AS schnittgehalt\nFROM mitarbeiter\nGROUP BY abteilung_id;\n\nSELECT * FROM v_personalstatistik ORDER BY mitarbeiter DESC;", label:"Beispiel: Personenbezug ausblenden statt Rechte einzeln vergeben", run:true},
+ {sql:"DROP VIEW v_personalstatistik;", label:"Aufräumen", run:true},
  {h3:"Rechte prüfen und nachvollziehen"},
  {sql:"-- Was darf ein bestimmtes Konto?\nSHOW GRANTS FOR 'app_web'@'10.0.0.%';\n\n-- Was darf ich selbst?\nSHOW GRANTS;\nSHOW GRANTS FOR CURRENT_USER();\n\n-- Alle Konten des Servers auflisten\nSELECT user, host, account_locked, password_expired\nFROM mysql.user\nORDER BY user;\n\n-- Rechte tabellenweise nachschlagen\nSELECT * FROM information_schema.user_privileges;\nSELECT * FROM information_schema.schema_privileges WHERE grantee LIKE \"'app_web'%\";\n\n-- Nach direkter Änderung an mysql.* nötig, sonst nicht\nFLUSH PRIVILEGES;", label:"Wer darf was?", run:false},
  {h3:"Vollständiges Beispiel im Terminal"},
@@ -3354,6 +3428,8 @@ body:[
   ["--source-data=2","schreibt die Binlog-Position als Kommentar mit — Basis für Point-in-Time-Recovery. Der ältere Name <code>--master-data</code> ist seit 8.0.26 nur noch ein veralteter Alias."]
  ]}},
  {box:{kind:"warn", title:"Ohne --single-transaction", html:"<p>läuft mysqldump mit <code>--lock-tables</code> und sperrt während des gesamten Exports. Auf einem produktiven Server steht damit die Anwendung. Bei MyISAM-Tabellen bleibt allerdings nur diese Variante, weil es dort keine Transaktionen gibt.</p>"}},
+ {sql:"-- Beispiel: Was in einem Dump landet — die Struktur einer Tabelle\nDESCRIBE ticket;", label:"Beispiel: Struktur, die mysqldump als CREATE TABLE ausgibt", run:true},
+ {sql:"-- Beispiel: Umfang der Sicherung abschätzen\nSELECT 'abteilung' AS tabelle, COUNT(*) AS zeilen FROM abteilung\nUNION ALL SELECT 'mitarbeiter', COUNT(*) FROM mitarbeiter\nUNION ALL SELECT 'geraet',      COUNT(*) FROM geraet\nUNION ALL SELECT 'ticket',      COUNT(*) FROM ticket;", label:"Beispiel: Zeilenzahlen vor dem Backup prüfen", run:true},
  {h3:"Logisch oder physisch?"},
  {table:{head:["Verfahren","Vorteil","Nachteil"], rows:[
   ["mysqldump (logisch)","versionsübergreifend, lesbar, selektiv wiederherstellbar","langsam bei großen Beständen"],
@@ -3364,6 +3440,7 @@ body:[
  {p:"Das <strong>Binärlog</strong> protokolliert jede datenverändernde Anweisung. Mit einer Vollsicherung von Sonntagnacht plus den Binlogs bis Dienstag 14:32 Uhr lässt sich der Zustand exakt bis zur Sekunde vor einem versehentlichen <code>DELETE</code> wiederherstellen. Ohne aktiviertes Binlog endet jede Wiederherstellung beim letzten Vollbackup."},
  {fig:{t:"Abbildung 11 — Wiederherstellung auf einen Zeitpunkt und Replikation", svg:FIGS.backup, c:"Ohne aktiviertes Binärlog endet jede Wiederherstellung beim letzten Vollbackup — alles danach ist verloren."}},
  {sql:"# Binlogs anzeigen\nSHOW BINARY LOGS;\n\n# Änderungen bis kurz vor den Fehler einspielen\nmysqlbinlog --stop-datetime=\"2026-08-03 14:32:00\" \\\n            binlog.000123 | mysql -u root -p", label:"Wiederherstellung auf einen Zeitpunkt", run:false},
+ {sql:"-- Beispiel: Kontrollabfrage nach einer Wiederherstellung\nSELECT (SELECT COUNT(*) FROM mitarbeiter) AS mitarbeiter,\n       (SELECT COUNT(*) FROM geraet)      AS geraete,\n       (SELECT COUNT(*) FROM ticket)      AS tickets,\n       (SELECT MAX(erstellt) FROM ticket) AS neuestes_ticket;", label:"Beispiel: Stichprobe nach dem Restore", run:true},
  {h3:"Replikation"},
  {p:"Bei der Replikation überträgt ein Quellserver (Source) seine Binlog-Ereignisse an einen oder mehrere Replikate (Replica). Sie dient der Ausfallsicherheit, der Lastverteilung auf Leseabfragen und ermöglicht Backups vom Replikat statt vom Produktivsystem. Standard ist heute die Positionierung über <strong>GTIDs</strong> (Global Transaction Identifiers), die einen Failover erheblich vereinfacht. Für automatische Ausfallsicherung mit Quorum gibt es die <strong>InnoDB Cluster</strong>-Lösung aus Group Replication, MySQL Router und MySQL Shell."},
  {box:{kind:"", title:"Asynchron, halbsynchron, synchron", html:"<p><strong>Asynchron</strong> ist der Standard: Der Quellserver bestätigt sofort, ein Datenverlust bei Absturz ist möglich. <strong>Halbsynchron</strong> wartet, bis mindestens ein Replikat den Empfang quittiert hat. <strong>Group Replication</strong> arbeitet mit Quorum und bietet die stärkste Garantie bei entsprechend höherer Latenz.</p>"}},
@@ -3404,6 +3481,8 @@ body:[
  {box:{kind:"tip", title:"Ausnahme: mehrwertige Indizes", html:"<p>Seit MySQL 8.0.17 gibt es <em>multi-valued indexes</em> direkt auf JSON-Arrays: <code>INDEX idx_ports ((CAST(spezifikation-&gt;&#39;$.ports&#39; AS CHAR(20) ARRAY)))</code>. Abgefragt werden sie mit <code>MEMBER OF</code>, <code>JSON_CONTAINS</code> oder <code>JSON_OVERLAPS</code> — für alles andere bleibt die generierte Spalte der Weg.</p>"}},
  {sql:"ALTER TABLE geraet_details\n  ADD COLUMN ram_gb INT\n    GENERATED ALWAYS AS (CAST(spezifikation->>'$.ram_gb' AS UNSIGNED)) STORED,\n  ADD INDEX idx_ram (ram_gb);\n\nSELECT geraet_id, ram_gb FROM geraet_details WHERE ram_gb >= 32;", label:"Generierte Spalte plus Index", run:false},
  {p:"<code>STORED</code> speichert den Wert physisch, <code>VIRTUAL</code> berechnet ihn beim Lesen. Für Indizes ist beides möglich; STORED kostet Platz, VIRTUAL kostet Rechenzeit. Generierte Spalten funktionieren übrigens auch ohne JSON — etwa für einen Index auf <code>YEAR(erstellt)</code>, der sonst nicht nutzbar wäre."},
+ {sql:"-- Beispiel: JSON als Text nachgebildet — so wären die Werte strukturiert\nCREATE TABLE spez (\n  geraet_id INT PRIMARY KEY,\n  cpu       VARCHAR(20),\n  ram_gb    INT,\n  garantie  INT\n);\n\nINSERT INTO spez VALUES\n  (1,'i7-1365U',32,3), (2,'i5-1335U',16,2), (4,'M3 Pro',36,3);\n\n-- Genau diese Abfrage würde mit JSON so aussehen:\n-- WHERE spezifikation->>'$.ram_gb' >= 32\nSELECT g.modell, s.cpu, s.ram_gb\nFROM geraet g\nJOIN spez s ON s.geraet_id = g.id\nWHERE s.ram_gb >= 32;", label:"Beispiel: dieselbe Frage einmal relational statt in JSON", run:true},
+ {sql:"DROP TABLE spez;", label:"Aufräumen", run:true},
  {h3:"Volltextsuche"},
  {p:"Ein <code>LIKE '%wort%'</code> durchsucht jede Zeile und ignoriert jeden Index. Für echte Textsuche gibt es <code>FULLTEXT</code>-Indizes, die eine Wortliste aufbauen und zusätzlich eine Relevanzbewertung liefern."},
  {sql:"ALTER TABLE ticket ADD FULLTEXT INDEX ft_titel (titel);\n\n-- natürliche Sprache: sortiert nach Relevanz\nSELECT id, titel,\n       MATCH(titel) AGAINST('Datenbank Backup') AS relevanz\nFROM ticket\nWHERE MATCH(titel) AGAINST('Datenbank Backup')\nORDER BY relevanz DESC;\n\n-- Boolescher Modus: + muss, - darf nicht, * Wortanfang\nSELECT id, titel\nFROM ticket\nWHERE MATCH(titel) AGAINST('+Datenbank -Restore' IN BOOLEAN MODE);", label:"FULLTEXT und MATCH … AGAINST", run:false},
@@ -3413,6 +3492,7 @@ body:[
   ["WITH QUERY EXPANSION","zweiter Suchlauf mit den Wörtern der besten Treffer"]
  ]}},
  {box:{kind:"tip", title:"Deutsche Texte", html:"<p>Der Standard-Parser trennt an Wortgrenzen und hat in InnoDB eine Mindestwortlänge von drei Zeichen (<code>innodb_ft_min_token_size</code>; MyISAM verwendet <code>ft_min_word_len</code> mit vier). Für Sprachen ohne Leerzeichen gibt es den ngram-Parser. Zusammengesetzte deutsche Wörter findet die Volltextsuche nur mit Platzhalter im Boolean Mode: <code>'Daten*'</code>.</p><p>Die oft zitierte 50-Prozent-Regel — Wörter, die in mehr als der Hälfte aller Zeilen vorkommen, gelten als bedeutungslos — betrifft ausschließlich <strong>MyISAM</strong>-Volltextindizes. In InnoDB gibt es sie nicht.</p>"}},
+ {sql:"-- Beispiel: die einfache Alternative zur Volltextsuche\nSELECT id, titel\nFROM ticket\nWHERE titel LIKE '%Datenbank%'\n   OR titel LIKE '%Backup%';\n\n-- Auf einem echten Server mit FULLTEXT-Index wäre das:\n-- WHERE MATCH(titel) AGAINST('Datenbank Backup')", label:"Beispiel: LIKE gegen MATCH … AGAINST", run:true},
  {h3:"Geodaten"},
  {sql:"ALTER TABLE abteilung\n  ADD COLUMN position POINT SRID 4326 NOT NULL,\n  ADD SPATIAL INDEX sp_position (position);\n\n-- SRID 4326: erst Breite, dann Länge!\nUPDATE abteilung\n   SET position = ST_SRID(POINT(52.5200, 13.4050), 4326)\n WHERE standort = 'Berlin';\n\n-- Entfernung in Metern zwischen zwei Punkten\nSELECT name,\n       ST_Latitude(position)  AS breite,\n       ST_Longitude(position) AS laenge,\n       ROUND(ST_Distance_Sphere(position, ST_SRID(POINT(52.5163, 13.3777), 4326))) AS meter\nFROM abteilung\nORDER BY meter;", label:"Punkte speichern und Entfernungen rechnen", run:false},
  {p:"Der <strong>SRID</strong> legt das Koordinatensystem fest — 4326 ist WGS 84, also die üblichen GPS-Koordinaten. Ein <code>SPATIAL INDEX</code> setzt <code>NOT NULL</code> voraus und beschleunigt Umkreissuchen erheblich."},
@@ -3427,6 +3507,7 @@ body:[
   ["DISTANCE(a, b, 'COSINE')","Abstand zweier Vektoren — auch EUCLIDEAN und DOT"]
  ]}},
  {box:{kind:"exam", title:"Einordnung", html:"<p>Die Embeddings selbst erzeugt MySQL nicht — sie kommen aus einem Sprachmodell und werden nur gespeichert und verglichen. Die Standardlänge beträgt 2048 Einträge, das Maximum 16 383. Ein VECTOR lässt sich weder als Schlüssel verwenden noch sortieren; erlaubt sind Gleichheitsvergleich und Abstandsfunktionen.</p>"}},
+ {sql:"-- Beispiel: Ähnlichkeit ohne Vektoren — hier über gemeinsame Merkmale\nSELECT g1.modell AS geraet, g2.modell AS aehnlich, g1.typ\nFROM geraet g1\nJOIN geraet g2 ON g1.typ = g2.typ\n              AND g1.hersteller = g2.hersteller\n              AND g1.id < g2.id\nORDER BY g1.typ;", label:"Beispiel: klassische Ähnlichkeitssuche über Gleichheit", run:true},
  {h3:"Wann welcher Ansatz?"},
  {table:{head:["Aufgabe","Passendes Mittel"], rows:[
   ["Exakter Wert, oft gefiltert","normale Spalte mit Index"],
@@ -3470,9 +3551,12 @@ body:[
   ["\\G statt ;","Ergebnis vertikal ausgeben — bei vielen Spalten viel lesbarer"],
   ["exit oder \\q","Client beenden"]
  ]}},
+ {sql:"SHOW TABLES;\nDESCRIBE abteilung;", label:"Beispiel: die zwei ersten Befehle nach dem Verbinden", run:true},
  {h3:"Zeichensatz prüfen"},
  {sql:"SHOW VARIABLES LIKE 'character_set%';\nSHOW VARIABLES LIKE 'collation%';\nSELECT @@character_set_database, @@collation_database;", label:"Kontrolle vor dem ersten Import", run:false},
  {p:"Umlaute, die als <code>Ã¼</code> erscheinen, sind fast immer eine Verkettung aus falscher Verbindungs-Codierung und richtiger Speicherung — oder umgekehrt. Wichtig ist, dass Server, Datenbank, Tabelle, Spalte <em>und</em> Verbindung durchgehend auf <code>utf8mb4</code> stehen. In PHP gehört dazu <code>charset=utf8mb4</code> im DSN, in Java <code>characterEncoding=UTF-8</code> in der JDBC-URL."},
+ {sql:"-- Beispiel: Umlaute prüfen — kommen sie sauber an?\nSELECT nachname,\n       CHAR_LENGTH(nachname) AS zeichen,\n       LENGTH(nachname)      AS byte\nFROM mitarbeiter\nWHERE nachname REGEXP 'ä|ö|ü|ß' OR vorname REGEXP 'ä|ö|ü|ß';", label:"Beispiel: Zeichensatz-Kontrolle an echten Daten", run:false},
+ {sql:"SELECT vorname, nachname FROM mitarbeiter WHERE vorname LIKE '%ö%' OR nachname LIKE '%ä%';", label:"Beispiel: Umlaute finden", run:true},
  {h3:"Häufige Fehlermeldungen"},
  {table:{head:["Meldung","Ursache und Lösung"], rows:[
   ["ERROR 1045 — Access denied","Falsches Passwort oder falscher Host im Konto. Prüfen mit SELECT user, host FROM mysql.user;"],
@@ -3485,6 +3569,8 @@ body:[
   ["ERROR 1175 — Safe update mode","UPDATE/DELETE ohne Schlüssel in der WHERE-Klausel; Absicht prüfen."]
  ]}},
  {box:{kind:"exam", title:"Fehlernummern lesen", html:"<p>Die vierstellige Nummer ist über alle Sprachen und Konnektoren hinweg gleich. In Anwendungen wird sie ausgewertet, um etwa 1062 als <em>Benutzername bereits vergeben</em> zu übersetzen, statt dem Benutzer die rohe SQL-Meldung zu zeigen.</p>"}},
+ {sql:"-- Beispiel: Fehler 1062 selbst auslösen und die Meldung lesen\nINSERT INTO abteilung (id, name, standort, budget)\nVALUES (1, 'Doppelt', 'Berlin', 1000);", label:"Beispiel: Duplicate entry — der Primärschlüssel 1 existiert bereits", run:true, err:true},
+ {sql:"-- Beispiel: Fehler 1054 — Spalte gibt es nicht\nSELECT vorname, telefonnummer FROM mitarbeiter;", label:"Beispiel: Unknown column", run:true, err:true},
  {h3:"MySQL Workbench"},
  {p:"Workbench vereint drei Bereiche: den <strong>SQL-Editor</strong> mit Ergebnisraster und Ausführungsplan, die <strong>Serververwaltung</strong> mit Benutzern, Status und Import/Export sowie die <strong>Modellierung</strong> mit EER-Diagrammen. Aus einem Modell erzeugt <em>Forward Engineering</em> das fertige SQL-Skript; <em>Reverse Engineering</em> baut aus einer bestehenden Datenbank ein Diagramm — praktisch, um ein fremdes Schema zu verstehen."},
  {sql:"SELECT VERSION() AS server, DATABASE() AS aktuelle_db, USER() AS angemeldet_als;", label:"Erste eigene Abfrage — hier direkt ausführbar", run:true}
@@ -3512,8 +3598,10 @@ body:[
  {h3:"Java mit JDBC"},
  {sql:"String url = \"jdbc:mysql://localhost:3306/it_betrieb\"\n           + \"?useUnicode=true&characterEncoding=UTF-8\"\n           + \"&connectionTimeZone=Europe/Berlin\";\n\ntry (Connection con = DriverManager.getConnection(url, \"app_web\", passwort);\n     PreparedStatement ps = con.prepareStatement(\n         \"SELECT id, titel FROM ticket WHERE status = ? ORDER BY erstellt DESC\")) {\n\n    ps.setString(1, \"offen\");\n\n    try (ResultSet rs = ps.executeQuery()) {\n        while (rs.next()) {\n            System.out.println(rs.getInt(\"id\") + \": \" + rs.getString(\"titel\"));\n        }\n    }\n}", label:"try-with-resources schließt Verbindung, Statement und ResultSet zuverlässig", run:false},
  {p:"Der Treiber heißt <strong>Connector/J</strong> und wird als Abhängigkeit eingebunden. Wichtig ist die Zeitzone in der URL: Ohne Angabe verschiebt der Treiber Zeitstempel oder verweigert in manchen Konstellationen den Verbindungsaufbau. Der Parameter heißt seit Connector/J 8.0.23 <code>connectionTimeZone</code>; der ältere Name <code>serverTimezone</code> funktioniert weiterhin als Alias. Ergebnismengen werden über <code>rs.next()</code> zeilenweise durchlaufen — der Cursor steht anfangs <em>vor</em> der ersten Zeile."},
+ {sql:"-- Beispiel: Das, was das PDO-Beispiel oben abfragt\nSELECT id, titel, status\nFROM ticket\nWHERE status = 'offen'\nORDER BY erstellt DESC\nLIMIT 10;", label:"Beispiel: die Abfrage hinter dem PHP-Code", run:true},
  {h3:"Transaktionen im Code"},
  {sql:"// Java\ncon.setAutoCommit(false);\ntry {\n    ps1.executeUpdate();\n    ps2.executeUpdate();\n    con.commit();\n} catch (SQLException e) {\n    con.rollback();\n    throw e;\n} finally {\n    con.setAutoCommit(true);\n}\n\n// PHP\n$pdo->beginTransaction();\ntry {\n    $pdo->prepare('UPDATE konto SET saldo = saldo - ? WHERE id = ?')->execute([500, 1]);\n    $pdo->prepare('UPDATE konto SET saldo = saldo + ? WHERE id = ?')->execute([500, 2]);\n    $pdo->commit();\n} catch (Throwable $e) {\n    $pdo->rollBack();\n    throw $e;\n}", label:"Dasselbe Muster in beiden Sprachen", run:false},
+ {sql:"-- Beispiel: Was ein PreparedStatement mit gebundenen Werten ausführt\nSELECT t.id, t.titel, m.vorname, m.nachname\nFROM ticket t\nJOIN mitarbeiter m ON t.mitarbeiter_id = m.id\nWHERE t.status = 'bearbeitung'\nORDER BY t.erstellt DESC;", label:"Beispiel: die Abfrage hinter dem JDBC-Code", run:true},
  {h3:"Verbindungen verwalten"},
  {p:"Ein Verbindungsaufbau kostet Zeit: TCP-Handshake, Authentifizierung, Sitzungsvariablen. Bei jeder HTTP-Anfrage neu zu verbinden ist Verschwendung. Ein <strong>Connection Pool</strong> hält geöffnete Verbindungen vor und gibt sie reihum aus — in Java üblicherweise HikariCP, in Anwendungsservern eingebaut. PHP kennt mit <code>PDO::ATTR_PERSISTENT</code> eine einfache Variante, die aber Tücken bei offenen Transaktionen und temporären Tabellen hat."},
  {table:{head:["Stellschraube","Bedeutung"], rows:[
@@ -3526,6 +3614,7 @@ body:[
  {p:"Ein Klassiker: Die Anwendung lädt 100 Tickets und fragt anschließend in einer Schleife für jedes Ticket den Melder ab. Aus einer Abfrage werden 101 — jede mit Netzwerklatenz. Die Lösung ist ein JOIN oder ein Nachladen aller Melder in einer einzigen Abfrage mit <code>IN (…)</code>."},
  {sql:"SELECT t.id, t.titel, t.status,\n       m.vorname, m.nachname\nFROM ticket t\nJOIN mitarbeiter m ON t.mitarbeiter_id = m.id\nWHERE t.status <> 'geschlossen'\nORDER BY t.erstellt DESC;", label:"Eine Abfrage statt 101 — hier ausführbar", run:true},
  {box:{kind:"tip", title:"ORM: Bequemlichkeit mit Preisschild", html:"<p>Object-Relational-Mapper wie Doctrine, Eloquent oder Hibernate nehmen viel Handarbeit ab, erzeugen aber leicht unbeabsichtigte Abfragefluten. Wer ein ORM einsetzt, sollte dessen Abfrageprotokoll kennen und im Zweifel eine handgeschriebene Abfrage verwenden.</p>"}},
+ {sql:"-- Beispiel: Detailabfrage für eine Einzelseite — genau ein Datensatz\nSELECT t.*, m.nachname AS melder, g.modell AS geraet\nFROM ticket t\nJOIN mitarbeiter m ON t.mitarbeiter_id = m.id\nLEFT JOIN geraet g ON t.geraet_id = g.id\nWHERE t.id = 9;", label:"Beispiel: eine typische Detailabfrage", run:true},
  {h3:"Was nie in den Code gehört"},
  {ul:[
   "Zugangsdaten im Quelltext oder im Git-Repository — sie gehören in Umgebungsvariablen oder eine Konfiguration außerhalb des Webverzeichnisses.",
@@ -3646,6 +3735,8 @@ body:[
   "Für jede Ausleihe wird der berechnete Preis gespeichert."
  ]},
  {box:{kind:"exam", title:"Bearbeitungshinweis", html:"<p>Löse die Theorieaufgaben unten erst schriftlich auf Papier, bevor du die Musterlösung aufklappst — sonst fühlt es sich zwar leichter an, bringt aber nichts.</p>"}},
+ {sql:"-- Beispiel einer gelösten Prüfungsaufgabe:\n-- „Geben Sie je Abteilung die Anzahl der Mitarbeiter und das\n--  höchste Gehalt aus. Abteilungen ohne Mitarbeiter sollen erscheinen.“\nSELECT a.name              AS abteilung,\n       COUNT(m.id)         AS anzahl,\n       IFNULL(MAX(m.gehalt), 0) AS hoechstes\nFROM abteilung a\nLEFT JOIN mitarbeiter m ON m.abteilung_id = a.id\nGROUP BY a.id, a.name\nORDER BY anzahl DESC;", label:"Musterbeispiel: LEFT JOIN + GROUP BY + IFNULL", run:true},
+ {sql:"-- Beispiel: mehrstufige Auswertung, wie sie in Teil 2 vorkommt\nSELECT a.name AS abteilung,\n       COUNT(DISTINCT m.id) AS mitarbeiter,\n       COUNT(DISTINCT t.id) AS tickets,\n       ROUND(AVG(m.gehalt), 2) AS schnittgehalt\nFROM abteilung a\nLEFT JOIN mitarbeiter m ON m.abteilung_id = a.id\nLEFT JOIN ticket t     ON t.mitarbeiter_id = m.id\nGROUP BY a.id, a.name\nHAVING mitarbeiter > 0\nORDER BY tickets DESC;", label:"Musterbeispiel: zwei Joins, DISTINCT-Zählung und HAVING", run:true},
  {h3:"SQL-Teil: Auswertungen für die Geschäftsleitung"},
  {p:"Der praktische Teil arbeitet weiter auf der bekannten Datenbank <code>it_betrieb</code>, damit deine Lösungen sofort geprüft werden können. Die Aufgaben entsprechen im Anspruch dem SQL-Teil einer Abschlussprüfung — von der einfachen Auswahl bis zur mehrstufigen Auswertung."},
  {sql:"-- Erinnerung an das Modell\nSELECT 'abteilung' AS tabelle, COUNT(*) AS zeilen FROM abteilung\nUNION ALL SELECT 'mitarbeiter', COUNT(*) FROM mitarbeiter\nUNION ALL SELECT 'geraet',      COUNT(*) FROM geraet\nUNION ALL SELECT 'ticket',      COUNT(*) FROM ticket;", label:"Überblick über die Datenbasis", run:true}
@@ -3806,7 +3897,9 @@ const ABK = [
  ["MariaDB","Maria + Database","Der 2009 abgespaltene Fork, benannt nach Widenius' jüngerer Tochter Maria."],
  ["DB","Database","Datenbank."],
  ["DBMS","Database Management System","Datenbank-Managementsystem — die Software, die Datenbanken verwaltet. MySQL ist ein DBMS."],
- ["RDBMS","Relational Database Management System","Relationales DBMS, also eines, das Daten in Tabellen mit Beziehungen speichert."],
+ ["RDBMS","Relational Database Management System","Relationales DBMS: Daten liegen in Tabellen, abgefragt wird mit ANSI-SQL. MySQL, PostgreSQL, Oracle, SQL Server."],
+ ["ORDBMS","Object-Relational Database Management System","Objektrelationales DBMS — relational plus Objekttypen und Vererbung. Nicht mit reinem ANSI-SQL abfragbar."],
+ ["NoSQL","Not only SQL","Sammelbegriff für nichtrelationale Systeme: Dokumente (JSON, XML), Schlüssel-Wert-Paare, Spaltenfamilien, Graphen. Jedes bringt eine eigene Abfragesprache mit."],
  ["ANSI","American National Standards Institute","US-Normungsinstitut, das 1986 den ersten SQL-Standard verabschiedete."],
  ["ISO","International Organization for Standardization","Internationale Normungsorganisation. SQL ist als ISO/IEC 9075 genormt."],
  ["IEC","International Electrotechnical Commission","Internationale elektrotechnische Kommission, gemeinsam mit der ISO für die SQL-Norm zuständig."],
@@ -3829,8 +3922,13 @@ const ABK = [
  ["ER","Entity-Relationship","„Gegenstand-Beziehung“ — das Modell, mit dem Fachdaten vor der Umsetzung beschrieben werden."],
  ["ERM","Entity-Relationship-Modell","Das fertige Diagramm aus Entitäten, Attributen und Beziehungen."],
  ["EER","Enhanced Entity-Relationship","Erweitertes ER-Modell mit Vererbung und Spezialisierung. So heißt der Diagrammtyp in MySQL Workbench."],
- ["PK","Primary Key","Primärschlüssel — eindeutig und nicht NULL, genau einer je Tabelle."],
- ["FK","Foreign Key","Fremdschlüssel — verweist auf den Schlüssel einer anderen Tabelle."],
+ ["PK","Primary Key","Primärschlüssel — eindeutig, NULL verboten, genau einer je Tabelle. Kürzel in MySQL Workbench."],
+ ["UQ","Unique Key","Sekundär- oder Alternativschlüssel — verhindert Duplikate, erlaubt aber NULL (auch mehrfach). Mehrere je Tabelle möglich."],
+ ["FK","Foreign Key","Fremdschlüssel — erzwingt, dass die Werte in der referenzierten PK- oder UQ-Spalte vorkommen. Mehrere je Tabelle möglich."],
+ ["NN","Not Null","Pflichtfeld — die Spalte muss immer einen Wert enthalten."],
+ ["CH","Check","Bedingungsprüfung innerhalb einer Zeile, etwa <code>CHECK (bis &gt;= von)</code>. In MySQL erst ab 8.0.16 wirksam."],
+ ["DF","Default","Vorgabewert, wenn beim INSERT keiner angegeben wird."],
+ ["AI","Auto Increment","Automatische fortlaufende Nummerierung — nur eine Spalte je Tabelle, muss indiziert sein."],
  ["AK","Alternate Key","Alternativschlüssel — ein Schlüsselkandidat, der nicht Primärschlüssel wurde; meist als UNIQUE umgesetzt."],
  ["NF","Normalform","Stufe der Normalisierung: 1NF, 2NF, 3NF und darüber hinaus."],
  ["BCNF","Boyce-Codd-Normalform","Verschärfung der 3NF: Jede Determinante muss ein Superschlüssel sein."],
@@ -3973,6 +4071,23 @@ const SHEET = [
  ["DROP TABLE t","Tabelle löschen"],
  ["TRUNCATE TABLE t","leeren, Zähler zurücksetzen"]
 ]},
+{h:"Constraint-Kürzel", d:[
+ ["PK","Primary Key — einer je Tabelle, kein NULL"],
+ ["UQ","Unique — mehrere möglich, NULL erlaubt"],
+ ["FK","Foreign Key — Wert muss in PK/UQ existieren"],
+ ["NN","Not Null — Pflichtfeld"],
+ ["CH","Check — Bedingung innerhalb einer Zeile"],
+ ["DF","Default — Vorgabewert"],
+ ["AI","Auto Increment — fortlaufende Nummer"],
+ ["NULL","keine Angabe / undefiniert, nicht 0"]
+]},
+{h:"Arten von DBMS", d:[
+ ["RDBMS","Tabellen, ANSI-SQL — MySQL, Oracle"],
+ ["ORDBMS","relational + Objekttypen, kein reines ANSI-SQL"],
+ ["NoSQL","Not only SQL — Dokumente, JSON, XML, Graphen"],
+ ["Daten","SELECT · INSERT · UPDATE · DELETE"],
+ ["Struktur","SHOW · CREATE · ALTER · DROP"]
+]},
 {h:"Constraints", d:[
  ["PRIMARY KEY","eindeutig + NOT NULL, einmal pro Tabelle"],
  ["FOREIGN KEY … REFERENCES","referenzielle Integrität"],
@@ -3988,6 +4103,16 @@ const SHEET = [
  ["DATE / DATETIME","Datum / Datum+Zeit"],
  ["TIMESTAMP","UTC, bis 2038"],
  ["JSON / VECTOR","Dokumente / Embeddings (9.0+)"]
+]},
+{h:"In Transaktionen erlaubt", d:[
+ ["✓ DML","INSERT · UPDATE · DELETE · REPLACE"],
+ ["✓ DQL","SELECT · TABLE · VALUES"],
+ ["✓ TCL","SAVEPOINT · ROLLBACK TO · RELEASE"],
+ ["✗ DDL","CREATE · ALTER · DROP · TRUNCATE"],
+ ["✗ DCL","GRANT · REVOKE · CREATE USER"],
+ ["✗ Sperren","LOCK / UNLOCK TABLES"],
+ ["Merksatz","nur DQL + DML sind rollbackfähig"],
+ ["MERGE","gibt es in MySQL nicht (Oracle)"]
 ]},
 {h:"Transaktionen", d:[
  ["START TRANSACTION","Block beginnen (auch BEGIN)"],
@@ -4214,6 +4339,10 @@ QUIZ.push(
 
 /* ---------- Karteikarten ---------- */
 const CARDS = [
+{c:"Grundlagen", f:"RDBMS / ORDBMS / NoSQL", b:"RDBMS: Tabellen, ANSI-SQL. ORDBMS: relational plus Objekttypen, braucht Erweiterungen. NoSQL („Not only SQL“): Dokumente, Schlüssel-Wert, Spalten, Graphen — eigene Abfragesprachen."},
+{c:"Grundlagen", f:"Die zwei Ebenen eines DBMS", b:"Dieselben vier Operationen für Daten (SELECT, INSERT, UPDATE, DELETE) und für Struktur (SHOW, CREATE, ALTER, DROP). Genau daher die Trennung DML/DDL."},
+{c:"DDL", f:"PK vs. UQ", b:"PK: genau einer je Tabelle, NULL verboten. UQ: mehrere möglich, NULL erlaubt — sogar mehrfach, weil zwei unbekannte Werte nicht als gleich gelten."},
+{c:"DDL", f:"Workbench-Kürzel", b:"PK Primary Key · UQ Unique · FK Foreign Key · NN Not Null · CH Check · DF Default · AI Auto Increment."},
 {c:"Grundlagen", f:"DBMS", b:"Datenbank-Managementsystem — die Software, die Datenbanken verwaltet. MySQL ist ein DBMS, SQL die Sprache."},
 {c:"Grundlagen", f:"InnoDB", b:"Standard-Storage-Engine seit MySQL 5.5: ACID-Transaktionen, Fremdschlüssel, Row-Level-Locking, Crash-Recovery."},
 {c:"Grundlagen", f:"LTS vs. Innovation", b:"LTS: 5 Jahre Premier Support, keine neuen Funktionen (8.4, 9.7). Innovation: quartalsweise Neuerungen, Pflege nur bis zur nächsten Version."},
@@ -4310,6 +4439,8 @@ const CARDS = [
 {c:"Transaktionen", f:"REPEATABLE READ", b:"Standard-Isolationsstufe in MySQL. Verhindert Dirty und Non-Repeatable Reads sowie — durch Next-Key-Locks — auch Phantom Reads."},
 {c:"Transaktionen", f:"Dirty Read", b:"Lesen von Daten, die eine andere Transaktion noch nicht bestätigt hat. Nur bei READ UNCOMMITTED möglich."},
 {c:"Transaktionen", f:"Deadlock", b:"Zwei Transaktionen warten wechselseitig auf Sperren. InnoDB erkennt das und rollt eine zurück (Fehler 1213) — Vorgang wiederholen."},
+{c:"Transaktionen", f:"Was darf in eine Transaktion?", b:"Nur DQL (SELECT) und DML (INSERT, UPDATE, DELETE, REPLACE) sowie TCL (SAVEPOINT). Alles andere — DDL, DCL, LOCK TABLES — löst ein implizites COMMIT aus."},
+{c:"Transaktionen", f:"MERGE in MySQL", b:"Gibt es nicht. Die Anweisung gehört zum SQL-Standard und existiert in Oracle, SQL Server und DB2. MySQL-Gegenstück: INSERT … ON DUPLICATE KEY UPDATE."},
 {c:"Transaktionen", f:"Implizites COMMIT", b:"DDL-Anweisungen bestätigen die laufende Transaktion automatisch; ein Rollback ist danach nicht mehr möglich."},
 
 {c:"Sicherheit", f:"SQL-Injection verhindern", b:"Ausschließlich durch Prepared Statements mit Parameterbindung. Escapen oder Filtern von Schlüsselwörtern reicht nicht."},
@@ -4333,6 +4464,14 @@ const CARDS = [
 
 /* ---------- Fragen zu den SQL-Sprachfamilien ---------- */
 QUIZ.push(
+{cat:"Abkürzungen",q:"Wofür steht NoSQL?",a:["No SQL — kein SQL möglich","Not only SQL — Sammelbegriff für nichtrelationale Systeme","Normalized SQL","New Object SQL"],c:1,e:"Dokumenten-, Schlüssel-Wert-, Spalten- und Graphdatenbanken. Jedes System bringt eine eigene Abfragesprache mit."},
+{cat:"Abkürzungen",q:"Was kennzeichnet ein ORDBMS?",a:["Es speichert nur Objekte","Relational plus Objekttypen und Vererbung — nicht mit reinem ANSI-SQL abfragbar","Es hat keine Tabellen","Es ist immer verteilt"],c:1,e:"Objektrelationales DBMS. Es braucht herstellerspezifische Erweiterungen über ANSI-SQL hinaus."},
+{cat:"Abkürzungen",q:"Wofür steht das Workbench-Kürzel UQ?",a:["Unique Query","Unique Key — Sekundärschlüssel","Update Queue","User Quota"],c:1,e:"Verhindert Duplikate, erlaubt aber NULL — auch mehrfach. Mehrere je Tabelle möglich."},
+{cat:"DDL",q:"Worin unterscheiden sich PRIMARY KEY und UNIQUE bei NULL-Werten?",a:["Beide verbieten NULL","PK verbietet NULL, UNIQUE erlaubt es sogar mehrfach","Beide erlauben NULL","UNIQUE verbietet NULL"],c:1,e:"Zwei unbekannte Werte gelten nicht als gleich — deshalb darf NULL in einer UNIQUE-Spalte mehrfach vorkommen."},
+{cat:"DDL",q:"Wie viele PRIMARY KEYs und wie viele UNIQUE-Constraints sind je Tabelle möglich?",a:["Je einer","Ein PK, aber beliebig viele UNIQUE","Beliebig viele PK, ein UNIQUE","Je beliebig viele"],c:1,e:"Der Primärschlüssel darf aus mehreren Spalten bestehen, existiert aber nur einmal. UNIQUE-Constraints gibt es beliebig viele."},
+{cat:"DDL",q:"Worauf bezieht sich ein CHECK-Constraint?",a:["Auf die ganze Tabelle","Auf eine Bedingung innerhalb einer Zeile","Auf andere Tabellen","Auf den Index"],c:1,e:"Etwa CHECK (ende_am >= start_am). Tabellen- oder zeilenübergreifende Prüfungen sind damit nicht möglich."},
+{cat:"Grundlagen",q:"Welche vier Grundoperationen bietet ein DBMS jeweils für Daten und für Struktur?",a:["Nur Lesen und Schreiben","Abfragen, Speichern, Ändern, Löschen","Import, Export, Backup, Restore","Start, Stop, Commit, Rollback"],c:1,e:"Auf Daten: SELECT, INSERT, UPDATE, DELETE (DML/DQL). Auf Struktur: SHOW, CREATE, ALTER, DROP (DDL)."},
+{cat:"Grundlagen",q:"Sind SQL-Schlüsselwörter case-sensitiv?",a:["Ja, immer groß","Nein — select, SELECT und SeLeCt sind gleichwertig","Nur bei InnoDB","Nur unter Linux"],c:1,e:"Konvention ist trotzdem: Schlüsselwörter groß, Bezeichner klein. Tabellennamen sind unter Linux dagegen sehr wohl case-sensitiv."},
 {cat:"Abkürzungen",q:"Wofür steht SQL?",a:["Simple Query Logic","Structured Query Language","System Query Layer","Sequential Query Language"],c:1,e:"„Strukturierte Abfragesprache“. Der IBM-Vorläufer hieß SEQUEL (Structured English Query Language) und musste aus Markenrechtsgründen umbenannt werden."},
 {cat:"Abkürzungen",q:"Woher stammt der Name MySQL?",a:["Vom englischen „mein SQL“","Von My, der Tochter des Mitgründers Michael Widenius","Von Mydata, der Vorgängerfirma","Von Multi-Year SQL"],c:1,e:"MariaDB, der 2009 abgespaltene Fork, trägt den Namen seiner jüngeren Tochter Maria."},
 {cat:"Abkürzungen",q:"Wofür steht DBMS?",a:["Database Master System","Database Management System","Data Backup Management Service","Distributed Base Management Server"],c:1,e:"Datenbank-Managementsystem — die Software, die Datenbanken verwaltet. MySQL ist ein DBMS."},
@@ -4349,6 +4488,10 @@ QUIZ.push(
 {cat:"Abkürzungen",q:"Wofür steht OLTP?",a:["Online Table Processing","Online Transaction Processing","Optimized Load Transfer Protocol","Object Level Transaction Pool"],c:1,e:"Transaktionsverarbeitung im Tagesgeschäft: viele kurze Vorgänge. Das Gegenstück OLAP steht für Online Analytical Processing."},
 {cat:"Abkürzungen",q:"Wofür steht PDO in PHP?",a:["PHP Database Operator","PHP Data Objects","Prepared Data Output","Persistent Database Object"],c:1,e:"PHPs einheitliche Datenbankschnittstelle mit Prepared Statements."},
 {cat:"Abkürzungen",q:"Wofür steht SRID?",a:["Spatial Reference System Identifier","Server Resource ID","Sequential Row Index Definition","Secure Record Identifier"],c:0,e:"Kennung des Koordinatensystems. 4326 steht für WGS 84, also GPS-Koordinaten."},
+{cat:"Transaktionen",q:"Welche Anweisungsarten lassen sich innerhalb einer Transaktion zurückrollen?",a:["Alle","Nur DQL und DML","Nur DDL","Nur DCL"],c:1,e:"Lesen und Datenänderungen sind Teil der Transaktion. Alles, was Struktur, Rechte oder Server verändert, löst ein implizites COMMIT aus."},
+{cat:"Transaktionen",q:"Gibt es die Anweisung MERGE in MySQL?",a:["Ja, seit 8.0","Nein — sie existiert in Oracle, SQL Server und DB2, in MySQL heißt das Gegenstück INSERT … ON DUPLICATE KEY UPDATE","Nur in der Enterprise Edition","Nur mit InnoDB"],c:1,e:"In Lehrmaterialien taucht MERGE oft in Listen transaktionsfähiger Anweisungen auf — diese stammen dann aus einem anderen Datenbanksystem."},
+{cat:"Transaktionen",q:"Zu welcher Sprachfamilie gehört SAVEPOINT?",a:["DML","DDL","TCL","DQL"],c:2,e:"Transaction Control Language — es steuert die Transaktion, statt Daten zu verändern. In manchen Aufzählungen wird es fälschlich zur DML gerechnet."},
+{cat:"Transaktionen",q:"Was passiert mit einem UPDATE, wenn danach ein CREATE TABLE und dann ein ROLLBACK folgt?",a:["Beides wird zurückgenommen","Das UPDATE bleibt dauerhaft — CREATE TABLE hat vorher committet","Es entsteht ein Fehler","Nur die Tabelle bleibt"],c:1,e:"Das implizite COMMIT des DDL bestätigt alles, was davor in der Transaktion passiert ist. Das ROLLBACK greift danach ins Leere."},
 {cat:"Transaktionen",q:"Was bewirkt SET autocommit = 0 für die Sitzung?",a:["Transaktionen werden abgeschaltet","Nach jedem COMMIT beginnt automatisch eine neue Transaktion — ohne COMMIT bleiben Sperren bestehen","Alle Änderungen sind sofort dauerhaft","ROLLBACK wird unmöglich"],c:1,e:"Wer dann das COMMIT vergisst, hält Sperren, bis die Verbindung endet."},
 {cat:"Transaktionen",q:"Was bedeutet Fehler 1205 'Lock wait timeout exceeded'?",a:["Ein Deadlock","Eine andere Transaktion hält die Zeile länger als innodb_lock_wait_timeout erlaubt","Der Server ist überlastet","Die Tabelle ist beschädigt"],c:1,e:"Das ist kein Deadlock, sondern eine zu lange laufende Transaktion. Standardwert: 50 Sekunden. Ursache über information_schema.innodb_trx finden."},
 {cat:"Transaktionen",q:"Wie verhindert man ein Lost Update am einfachsten?",a:["Mit einer höheren Isolationsstufe","Den Server rechnen lassen: UPDATE lager SET bestand = bestand - 3","Mit COMMIT nach jeder Anweisung","Gar nicht"],c:1,e:"Alternativ pessimistisch mit SELECT … FOR UPDATE oder optimistisch mit einer Versionsspalte. Kein Isolationslevel hilft, wenn in der Anwendung gerechnet wird."},
@@ -4842,7 +4985,8 @@ function renderBlocks(blocks){
     else if(b.sql){
       const id = "sn" + (++SNIPPET_ID);
       RAW[id] = b.sql;
-      h += '<div class="snippet" id="' + id + '"><header><span class="lbl">' + (b.label || "SQL") + "</span>" +
+      h += '<div class="snippet" id="' + id + '"><header><span class="lbl">' + (b.label || "SQL") +
+           (b.err ? ' <span style="color:var(--rose)">· erzeugt absichtlich einen Fehler</span>' : "") + "</span>" +
            (b.run ? '<button class="mini run" onclick="runSnippet(\'' + id + '\')">▶ Ausführen</button>' : "") +
            '<button class="mini" onclick="copySnippet(\'' + id + '\')">Kopieren</button>' +
            '<button class="mini" onclick="toPlayground(\'' + id + '\')">In Konsole</button></header>' +
